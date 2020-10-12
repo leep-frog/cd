@@ -23,6 +23,7 @@ type Dot struct {
 
 func (*Dot) Load(jsn string) error { return nil }
 func (*Dot) Changed() bool         { return false }
+func (*Dot) Option() *commands.Option { return nil }
 func (d *Dot) Name() string {
 	return fmt.Sprintf("%d-dir-dot", d.NumRecurs)
 }
