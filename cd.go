@@ -21,8 +21,8 @@ type Dot struct {
 	NumRecurs int
 }
 
-func (*Dot) Load(jsn string) error { return nil }
-func (*Dot) Changed() bool         { return false }
+func (*Dot) Load(jsn string) error    { return nil }
+func (*Dot) Changed() bool            { return false }
 func (*Dot) Option() *commands.Option { return nil }
 func (d *Dot) Name() string {
 	return fmt.Sprintf("%d-dir-dot", d.NumRecurs)
@@ -41,8 +41,8 @@ func (d *Dot) directory() string {
 
 func (d *Dot) cd(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
 	path := d.directory()
-	if strPtr := args[pathArg].String(); strPtr != nil {
-		path = filepath.Join(path, *strPtr)
+	if args[pathArg].GetSet() {
+		path = filepath.Join(path, args[pathArg].GetString_())
 	}
 
 	if fi, err := osStat(path); err == nil && !fi.IsDir() {

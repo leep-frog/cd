@@ -14,7 +14,6 @@ func TestLoad(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		json string
-		want *Dot
 	}{
 		{
 			name: "handles empty string",
@@ -55,22 +54,22 @@ var (
 
 func TestExecution(t *testing.T) {
 	for _, test := range []struct {
-		name      string
-		d         *Dot
-		args      []string
-		wantResp  *commands.ExecutorResponse
-		wantErr   string
-		wantOK bool
+		name       string
+		d          *Dot
+		args       []string
+		wantResp   *commands.ExecutorResponse
+		wantErr    string
+		wantOK     bool
 		wantStdout []string
 		wantStderr []string
-		osStatFI  os.FileInfo
-		osStatErr error
+		osStatFI   os.FileInfo
+		osStatErr  error
 	}{
 		{
 			name:     "handles nil arguments",
 			d:        DotCLI(1),
 			osStatFI: dirType,
-			wantOK: true,
+			wantOK:   true,
 			wantResp: &commands.ExecutorResponse{
 				Executable: []string{"cd", ".."},
 			},
@@ -80,7 +79,7 @@ func TestExecution(t *testing.T) {
 			d:        DotCLI(2),
 			osStatFI: dirType,
 			args:     []string{},
-			wantOK: true,
+			wantOK:   true,
 			wantResp: &commands.ExecutorResponse{
 				Executable: []string{
 					"cd",
@@ -93,7 +92,7 @@ func TestExecution(t *testing.T) {
 			d:        DotCLI(3),
 			osStatFI: fileType,
 			args:     []string{"something/somewhere.txt"},
-			wantOK: true,
+			wantOK:   true,
 			wantResp: &commands.ExecutorResponse{
 				Executable: []string{
 					"cd",
