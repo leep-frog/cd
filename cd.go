@@ -41,8 +41,8 @@ func (d *Dot) directory() string {
 
 func (d *Dot) cd(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
 	path := d.directory()
-	if args[pathArg].GetSet() {
-		path = filepath.Join(path, args[pathArg].GetString_())
+	if args[pathArg].Provided() {
+		path = filepath.Join(path, args[pathArg].String())
 	}
 
 	if fi, err := osStat(path); err == nil && !fi.IsDir() {
