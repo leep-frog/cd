@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/leep-frog/commands/commands"
+	"github.com/leep-frog/commands/commandtest"
 )
 
 func TestLoad(t *testing.T) {
@@ -56,10 +56,8 @@ func TestExecution(t *testing.T) {
 	for _, test := range []struct {
 		name       string
 		d          *Dot
-		args       []string
-		wantResp   *commands.ExecutorResponse
-		wantErr    string
-		wantOK     bool
+		ws         *commands.WorldState
+		want       *commands.WorldState
 		wantStdout []string
 		wantStderr []string
 		osStatFI   os.FileInfo
@@ -69,35 +67,39 @@ func TestExecution(t *testing.T) {
 			name:     "handles nil arguments",
 			d:        DotCLI(1),
 			osStatFI: dirType,
-			wantOK:   true,
-			wantResp: &commands.ExecutorResponse{
-				Executable: []string{"cd", ".."},
+			want: &commands.WorldState{
+				Executable: [][]string{{"cd", ".."}},
 			},
 		},
 		{
 			name:     "handles empty arguments",
 			d:        DotCLI(2),
 			osStatFI: dirType,
-			args:     []string{},
-			wantOK:   true,
-			wantResp: &commands.ExecutorResponse{
-				Executable: []string{
+			ws: &commands.WorldState{
+				RawArgs: []string{},
+			},
+			want: &commands.WorldState{
+				Executable: [][]string{{
 					"cd",
 					filepath.Join("../../"),
-				},
+				}},
 			},
 		},
 		{
 			name:     "cds into directory of a file",
 			d:        DotCLI(3),
 			osStatFI: fileType,
-			args:     []string{"something/somewhere.txt"},
-			wantOK:   true,
-			wantResp: &commands.ExecutorResponse{
-				Executable: []string{
+			ws: &commands.WorldState{
+				RawArgs: []string{"something/somewhere.txt"},
+			},
+			want: &commands.WorldState{
+				Args: map[string]*commands.Value{
+					pathArg: commands.StringValue("something/somewhere.txt"),
+				},
+				Executable: [][]string{{
 					"cd",
 					filepath.Join("..", "..", "..", "something"),
-				},
+				}},
 			},
 		},
 	} {
@@ -106,25 +108,9 @@ func TestExecution(t *testing.T) {
 			osStat = func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr }
 			defer func() { osStat = oldStat }()
 
-			tcos := &commands.TestCommandOS{}
-			got, ok := commands.Execute(tcos, test.d.Command(), test.args, nil)
-			if ok != test.wantOK {
-				t.Fatalf("Execute(%v, %v) returned %v for ok; want %v", test.d.Command(), test.args, ok, test.wantOK)
-			}
-
-			if diff := cmp.Diff(test.wantResp, got); diff != "" {
-				t.Fatalf("Execute(%v) produced response diff (-want, +got):\n%s", test.args, diff)
-			}
-
-			if diff := cmp.Diff(test.wantStdout, tcos.GetStdout()); diff != "" {
-				t.Errorf("command.Execute(%v) produced stdout diff (-want, +got):\n%s", test.args, diff)
-			}
-			if diff := cmp.Diff(test.wantStderr, tcos.GetStderr()); diff != "" {
-				t.Errorf("command.Execute(%v) produced stderr diff (-want, +got):\n%s", test.args, diff)
-			}
-
+			commandtest.Execute(t, test.d.Node(), test.ws, test.want, test.wantStdout, test.wantStderr)
 			if test.d.Changed() {
-				t.Fatalf("Execute(%v) marked Changed as true; want false", test.args)
+				t.Fatalf("Execute(%v) marked Changed as true; want false", test.ws)
 			}
 		})
 	}
@@ -135,11 +121,16 @@ func TestMetadata(t *testing.T) {
 
 	wantName := "4-dir-dot"
 	if got := d.Name(); got != wantName {
-		t.Fatalf("Name() returned %q; want %q", got, wantName)
+		t.Errorf("Name() returned %q; want %q", got, wantName)
 	}
 
 	wantAlias := "....."
 	if got := d.Alias(); got != wantAlias {
-		t.Fatalf("Alias() returned %q; want %q", got, wantAlias)
+		t.Errorf("Alias() returned %q; want %q", got, wantAlias)
+	}
+
+	var wantOption *commands.Option
+	if got := d.Option(); got != wantOption {
+		t.Errorf("Option() returned %v; want %v", got, wantOption)
 	}
 }

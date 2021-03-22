@@ -39,34 +39,30 @@ func (d *Dot) directory() string {
 	return filepath.Join(path...)
 }
 
-func (d *Dot) cd(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
+func (d *Dot) cd(ws *commands.WorldState) {
 	path := d.directory()
-	if args[pathArg].Provided() {
-		path = filepath.Join(path, args[pathArg].String())
+	if ws.Args[pathArg].Provided() {
+		path = filepath.Join(path, ws.Args[pathArg].String())
 	}
 
 	if fi, err := osStat(path); err == nil && !fi.IsDir() {
 		path = filepath.Dir(path)
 	}
 
-	return &commands.ExecutorResponse{
-		Executable: []string{"cd", path},
-	}, true
+	ws.Executable = [][]string{{"cd", path}}
 }
 
-func (d *Dot) Command() commands.Command {
+func (d *Dot) Node() *commands.Node {
 	cmp := &commands.Completor{
 		SuggestionFetcher: &commands.FileFetcher{
 			Directory: d.directory(),
 		},
 	}
 
-	return &commands.TerminusCommand{
-		Executor: d.cd,
-		Args: []commands.Arg{
-			commands.StringArg(pathArg, false, cmp),
-		},
-	}
+	return commands.SerialNodes(
+		commands.StringArg(pathArg, false, cmp),
+		commands.ExecutorNode(d.cd),
+	)
 }
 
 func DotCLI(NumRecurs int) *Dot {
