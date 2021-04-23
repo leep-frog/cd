@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/leep-frog/commands/commands"
+	"github.com/leep-frog/command"
 )
 
 const (
@@ -21,9 +21,8 @@ type Dot struct {
 	NumRecurs int
 }
 
-func (*Dot) Load(jsn string) error    { return nil }
-func (*Dot) Changed() bool            { return false }
-func (*Dot) Option() *commands.Option { return nil }
+func (*Dot) Load(jsn string) error { return nil }
+func (*Dot) Changed() bool         { return false }
 func (d *Dot) Name() string {
 	return fmt.Sprintf("%d-dir-dot", d.NumRecurs)
 }
@@ -39,29 +38,32 @@ func (d *Dot) directory() string {
 	return filepath.Join(path...)
 }
 
-func (d *Dot) cd(ws *commands.WorldState) {
+func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	path := d.directory()
-	if ws.Args[pathArg].Provided() {
-		path = filepath.Join(path, ws.Args[pathArg].String())
+	if data.Values[pathArg].Provided() {
+		path = filepath.Join(path, data.Values[pathArg].String())
 	}
 
 	if fi, err := osStat(path); err == nil && !fi.IsDir() {
 		path = filepath.Dir(path)
 	}
 
-	ws.Executable = [][]string{{"cd", path}}
+	eData.Executable = append(eData.Executable, []string{"cd", path})
+	return nil
 }
 
-func (d *Dot) Node() *commands.Node {
-	cmp := &commands.Completor{
-		SuggestionFetcher: &commands.FileFetcher{
-			Directory: d.directory(),
+func (d *Dot) Node() *command.Node {
+	ao := &command.ArgOpt{
+		Completor: &command.Completor{
+			SuggestionFetcher: &command.FileFetcher{
+				Directory: d.directory(),
+			},
 		},
 	}
 
-	return commands.SerialNodes(
-		commands.StringArg(pathArg, false, cmp),
-		commands.ExecutorNode(d.cd),
+	return command.SerialNodes(
+		command.OptionalStringNode(pathArg, ao),
+		command.SimpleProcessor(d.cd, nil),
 	)
 }
 

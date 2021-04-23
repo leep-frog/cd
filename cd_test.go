@@ -6,8 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leep-frog/commands/commands"
-	"github.com/leep-frog/commands/commandtest"
+	"github.com/leep-frog/command"
 )
 
 func TestLoad(t *testing.T) {
@@ -56,8 +55,10 @@ func TestExecution(t *testing.T) {
 	for _, test := range []struct {
 		name       string
 		d          *Dot
-		ws         *commands.WorldState
-		want       *commands.WorldState
+		args       []string
+		wantEData  *command.ExecuteData
+		wantErr    error
+		wantData   *command.Data
 		wantStdout []string
 		wantStderr []string
 		osStatFI   os.FileInfo
@@ -67,39 +68,47 @@ func TestExecution(t *testing.T) {
 			name:     "handles nil arguments",
 			d:        DotCLI(1),
 			osStatFI: dirType,
-			want: &commands.WorldState{
+			wantEData: &command.ExecuteData{
 				Executable: [][]string{{"cd", ".."}},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					"path": command.StringValue(""),
+				},
 			},
 		},
 		{
 			name:     "handles empty arguments",
 			d:        DotCLI(2),
 			osStatFI: dirType,
-			ws: &commands.WorldState{
-				RawArgs: []string{},
-			},
-			want: &commands.WorldState{
+			args:     []string{},
+			wantEData: &command.ExecuteData{
 				Executable: [][]string{{
 					"cd",
 					filepath.Join("../../"),
 				}},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					"path": command.StringValue(""),
+				},
 			},
 		},
 		{
 			name:     "cds into directory of a file",
 			d:        DotCLI(3),
 			osStatFI: fileType,
-			ws: &commands.WorldState{
-				RawArgs: []string{"something/somewhere.txt"},
-			},
-			want: &commands.WorldState{
-				Args: map[string]*commands.Value{
-					pathArg: commands.StringValue("something/somewhere.txt"),
-				},
+			args:     []string{"something/somewhere.txt"},
+			wantEData: &command.ExecuteData{
 				Executable: [][]string{{
 					"cd",
 					filepath.Join("..", "..", "..", "something"),
 				}},
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					"path": command.StringValue("something/somewhere.txt"),
+				},
 			},
 		},
 	} {
@@ -108,9 +117,9 @@ func TestExecution(t *testing.T) {
 			osStat = func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr }
 			defer func() { osStat = oldStat }()
 
-			commandtest.Execute(t, test.d.Node(), test.ws, test.want, test.wantStdout, test.wantStderr)
+			command.ExecuteTest(t, test.d.Node(), test.args, test.wantErr, test.wantEData, test.wantData, test.wantStdout, test.wantStderr)
 			if test.d.Changed() {
-				t.Fatalf("Execute(%v) marked Changed as true; want false", test.ws)
+				t.Fatalf("Execute(%v) marked Changed as true; want false", test.args)
 			}
 		})
 	}
@@ -127,10 +136,5 @@ func TestMetadata(t *testing.T) {
 	wantAlias := "....."
 	if got := d.Alias(); got != wantAlias {
 		t.Errorf("Alias() returned %q; want %q", got, wantAlias)
-	}
-
-	var wantOption *commands.Option
-	if got := d.Option(); got != wantOption {
-		t.Errorf("Option() returned %v; want %v", got, wantOption)
 	}
 }
