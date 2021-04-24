@@ -128,13 +128,8 @@ func TestExecution(t *testing.T) {
 func TestMetadata(t *testing.T) {
 	d := DotCLI(4)
 
-	wantName := "4-dir-dot"
+	wantName := "....."
 	if got := d.Name(); got != wantName {
 		t.Errorf("Name() returned %q; want %q", got, wantName)
-	}
-
-	wantAlias := "....."
-	if got := d.Alias(); got != wantAlias {
-		t.Errorf("Alias() returned %q; want %q", got, wantAlias)
 	}
 }

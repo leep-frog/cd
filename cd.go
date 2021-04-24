@@ -1,7 +1,6 @@
 package cd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,9 +24,6 @@ func (*Dot) Load(jsn string) error { return nil }
 func (*Dot) Changed() bool         { return false }
 func (*Dot) Setup() []string       { return nil }
 func (d *Dot) Name() string {
-	return fmt.Sprintf("%d-dir-dot", d.NumRecurs)
-}
-func (d *Dot) Alias() string {
 	return strings.Repeat(".", d.NumRecurs+1)
 }
 
