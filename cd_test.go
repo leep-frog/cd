@@ -71,11 +71,6 @@ func TestExecution(t *testing.T) {
 			wantEData: &command.ExecuteData{
 				Executable: [][]string{{"cd", ".."}},
 			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					"path": command.StringValue(""),
-				},
-			},
 		},
 		{
 			name:     "handles empty arguments",
@@ -87,11 +82,6 @@ func TestExecution(t *testing.T) {
 					"cd",
 					filepath.Join("../../"),
 				}},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					"path": command.StringValue(""),
-				},
 			},
 		},
 		{
