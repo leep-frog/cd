@@ -53,51 +53,52 @@ var (
 
 func TestExecution(t *testing.T) {
 	for _, test := range []struct {
-		name       string
-		d          *Dot
-		args       []string
-		wantEData  *command.ExecuteData
-		wantErr    error
-		wantData   *command.Data
-		wantStdout []string
-		wantStderr []string
-		osStatFI   os.FileInfo
-		osStatErr  error
+		name      string
+		d         *Dot
+		etc       *command.ExecuteTestCase
+		osStatFI  os.FileInfo
+		osStatErr error
 	}{
 		{
 			name:     "handles nil arguments",
-			d:        DotCLI(1),
 			osStatFI: dirType,
-			wantEData: &command.ExecuteData{
-				Executable: [][]string{{"cd", ".."}},
+			d:        DotCLI(1),
+			etc: &command.ExecuteTestCase{
+				WantExecuteData: &command.ExecuteData{
+					Executable: [][]string{{"cd", ".."}},
+				},
 			},
 		},
 		{
 			name:     "handles empty arguments",
-			d:        DotCLI(2),
 			osStatFI: dirType,
-			args:     []string{},
-			wantEData: &command.ExecuteData{
-				Executable: [][]string{{
-					"cd",
-					filepath.Join("../../"),
-				}},
+			d:        DotCLI(2),
+			etc: &command.ExecuteTestCase{
+				Args: []string{},
+				WantExecuteData: &command.ExecuteData{
+					Executable: [][]string{{
+						"cd",
+						filepath.Join("../../"),
+					}},
+				},
 			},
 		},
 		{
 			name:     "cds into directory of a file",
-			d:        DotCLI(3),
 			osStatFI: fileType,
-			args:     []string{"something/somewhere.txt"},
-			wantEData: &command.ExecuteData{
-				Executable: [][]string{{
-					"cd",
-					filepath.Join("..", "..", "..", "something"),
-				}},
-			},
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					"path": command.StringValue("something/somewhere.txt"),
+			d:        DotCLI(3),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"something/somewhere.txt"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: [][]string{{
+						"cd",
+						filepath.Join("..", "..", "..", "something"),
+					}},
+				},
+				WantData: &command.Data{
+					Values: map[string]*command.Value{
+						"path": command.StringValue("something/somewhere.txt"),
+					},
 				},
 			},
 		},
@@ -107,9 +108,10 @@ func TestExecution(t *testing.T) {
 			osStat = func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr }
 			defer func() { osStat = oldStat }()
 
-			command.ExecuteTest(t, test.d.Node(), test.args, test.wantErr, test.wantEData, test.wantData, test.wantStdout, test.wantStderr)
+			test.etc.Node = test.d.Node()
+			command.ExecuteTest(t, test.etc, nil)
 			if test.d.Changed() {
-				t.Fatalf("Execute(%v) marked Changed as true; want false", test.args)
+				t.Fatalf("Execute(%v) marked Changed as true; want false", test.etc.Args)
 			}
 		})
 	}
