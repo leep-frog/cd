@@ -110,9 +110,7 @@ func TestExecution(t *testing.T) {
 
 			test.etc.Node = test.d.Node()
 			command.ExecuteTest(t, test.etc, nil)
-			if test.d.Changed() {
-				t.Fatalf("Execute(%v) marked Changed as true; want false", test.etc.Args)
-			}
+			command.ChangeTest(t, nil, test.d)
 		})
 	}
 }
