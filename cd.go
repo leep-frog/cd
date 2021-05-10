@@ -54,7 +54,8 @@ func (d *Dot) Node() *command.Node {
 	ao := &command.ArgOpt{
 		Completor: &command.Completor{
 			SuggestionFetcher: &command.FileFetcher{
-				Directory: d.directory(),
+				Directory:   d.directory(),
+				IgnoreFiles: true,
 			},
 		},
 	}
