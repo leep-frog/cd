@@ -28,8 +28,9 @@ func (d *Dot) Name() string {
 }
 
 func (d *Dot) directory() string {
-	path := make([]string, d.NumRecurs)
-	for i := range path {
+	path := make([]string, d.NumRecurs+1)
+	path[0] = "."
+	for i := 1; i <= d.NumRecurs; i++ {
 		path[i] = ".."
 	}
 	return filepath.Join(path...)

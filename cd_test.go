@@ -70,6 +70,16 @@ func TestExecution(t *testing.T) {
 			},
 		},
 		{
+			name:     "handles basic dot",
+			osStatFI: dirType,
+			d:        DotCLI(0),
+			etc: &command.ExecuteTestCase{
+				WantExecuteData: &command.ExecuteData{
+					Executable: [][]string{{"cd", "."}},
+				},
+			},
+		},
+		{
 			name:     "handles empty arguments",
 			osStatFI: dirType,
 			d:        DotCLI(2),
