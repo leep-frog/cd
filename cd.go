@@ -35,7 +35,7 @@ func (d *Dot) directory() string {
 	return filepath.Join(path...)
 }
 
-func (d *Dot) cd(output command.Output, data *command.Data) error {
+func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	path := d.directory()
 	if data.Values[pathArg].Provided() {
 		path = filepath.Join(path, data.Values[pathArg].String())
@@ -45,7 +45,8 @@ func (d *Dot) cd(output command.Output, data *command.Data) error {
 		path = filepath.Dir(path)
 	}
 
-	return os.Chdir(path)
+	eData.Executable = append(eData.Executable, []string{"cd", path})
+	return nil
 }
 
 func (d *Dot) Node() *command.Node {
@@ -59,7 +60,7 @@ func (d *Dot) Node() *command.Node {
 
 	return command.SerialNodes(
 		command.OptionalStringNode(pathArg, ao),
-		command.ExecutorNode(d.cd),
+		command.SimpleProcessor(d.cd, nil),
 	)
 }
 
