@@ -1,6 +1,7 @@
 package cd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -65,7 +66,7 @@ func TestExecution(t *testing.T) {
 			d:        DotCLI(1),
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
-					Executable: [][]string{{"cd", ".."}},
+					Executable: []string{"cd .."},
 				},
 			},
 		},
@@ -75,7 +76,7 @@ func TestExecution(t *testing.T) {
 			d:        DotCLI(0),
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
-					Executable: [][]string{{"cd", "."}},
+					Executable: []string{"cd ."},
 				},
 			},
 		},
@@ -86,10 +87,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{},
 				WantExecuteData: &command.ExecuteData{
-					Executable: [][]string{{
-						"cd",
-						filepath.Join("../../"),
-					}},
+					Executable: []string{
+						fmt.Sprintf("cd %s", filepath.Join("..", "..")),
+					},
 				},
 			},
 		},
@@ -100,10 +100,9 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"something/somewhere.txt"},
 				WantExecuteData: &command.ExecuteData{
-					Executable: [][]string{{
-						"cd",
-						filepath.Join("..", "..", "..", "something"),
-					}},
+					Executable: []string{
+						fmt.Sprintf("cd %s", filepath.Join("..", "..", "..", "something")),
+					},
 				},
 				WantData: &command.Data{
 					Values: map[string]*command.Value{

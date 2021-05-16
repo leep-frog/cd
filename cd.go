@@ -1,6 +1,7 @@
 package cd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,7 +47,7 @@ func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data
 		path = filepath.Dir(path)
 	}
 
-	eData.Executable = append(eData.Executable, []string{"cd", path})
+	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", path))
 	return nil
 }
 
