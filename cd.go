@@ -43,12 +43,14 @@ func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data
 	if data.Values[pathArg].Provided() {
 		fmt.Println("dos", data.Values[pathArg].String())
 		path = filepath.Join(path, data.Values[pathArg].String())
+		fmt.Println("tres", data.Values[pathArg].String())
 	}
 
 	if fi, err := osStat(path); err == nil && !fi.IsDir() {
 		path = filepath.Dir(path)
 	}
 
+	fmt.Println("HEYO", fmt.Sprintf("cd %s", path))
 	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", path))
 	return nil
 }
