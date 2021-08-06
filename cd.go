@@ -39,7 +39,9 @@ func (d *Dot) directory() string {
 
 func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	path := d.directory()
+	fmt.Println("uno", path)
 	if data.Values[pathArg].Provided() {
+		fmt.Println("dos", data.Values[pathArg].String())
 		path = filepath.Join(path, data.Values[pathArg].String())
 	}
 
