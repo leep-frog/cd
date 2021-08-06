@@ -88,7 +88,7 @@ func TestExecution(t *testing.T) {
 				Args: []string{},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", filepath.Join("..", "..")),
+						fmt.Sprintf("cd %s", fp(filepath.Join("..", ".."))),
 					},
 				},
 			},
@@ -101,7 +101,7 @@ func TestExecution(t *testing.T) {
 				Args: []string{"something/somewhere.txt"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", filepath.Join("..", "..", "..", "something")),
+						fmt.Sprintf("cd %s", fp(filepath.Join("..", "..", "..", "something"))),
 					},
 				},
 				WantData: &command.Data{

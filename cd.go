@@ -39,20 +39,21 @@ func (d *Dot) directory() string {
 
 func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	path := d.directory()
-	fmt.Println("uno", path)
 	if data.Values[pathArg].Provided() {
-		fmt.Println("dos", data.Values[pathArg].String())
 		path = filepath.Join(path, data.Values[pathArg].String())
-		fmt.Println("tres", data.Values[pathArg].String())
 	}
 
 	if fi, err := osStat(path); err == nil && !fi.IsDir() {
 		path = filepath.Dir(path)
 	}
 
-	fmt.Println("HEYO", fmt.Sprintf("cd %s", path))
-	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", path))
+	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", fp(path)))
 	return nil
+}
+
+func fp(path string) string {
+	// Needed for use in msys2 mingw.
+	return strings.ReplaceAll(path, "\\", "\\\\")
 }
 
 func (d *Dot) Node() *command.Node {
