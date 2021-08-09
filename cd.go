@@ -57,12 +57,10 @@ func fp(path string) string {
 }
 
 func (d *Dot) Node() *command.Node {
-	ao := &command.ArgOpt{
-		Completor: &command.Completor{
-			SuggestionFetcher: &command.FileFetcher{
-				Directory:   d.directory(),
-				IgnoreFiles: true,
-			},
+	ao := &command.Completor{
+		SuggestionFetcher: &command.FileFetcher{
+			Directory:   d.directory(),
+			IgnoreFiles: true,
 		},
 	}
 
