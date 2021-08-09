@@ -105,9 +105,7 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						"path": command.StringValue("something/somewhere.txt"),
-					},
+					"path": command.StringValue("something/somewhere.txt"),
 				},
 			},
 		},

@@ -39,7 +39,7 @@ func (d *Dot) directory() string {
 
 func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	path := d.directory()
-	if data.Provided(pathArg) {
+	if data.HasArg(pathArg) {
 		path = filepath.Join(path, data.String(pathArg))
 	}
 
