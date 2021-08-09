@@ -39,8 +39,8 @@ func (d *Dot) directory() string {
 
 func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	path := d.directory()
-	if data.Values[pathArg].Provided() {
-		path = filepath.Join(path, data.Values[pathArg].String())
+	if data.Provided(pathArg) {
+		path = filepath.Join(path, data.String(pathArg))
 	}
 
 	if fi, err := osStat(path); err == nil && !fi.IsDir() {
