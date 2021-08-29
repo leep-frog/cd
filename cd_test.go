@@ -116,7 +116,7 @@ func TestExecution(t *testing.T) {
 			defer func() { osStat = oldStat }()
 
 			test.etc.Node = test.d.Node()
-			command.ExecuteTest(t, test.etc, nil)
+			command.ExecuteTest(t, test.etc)
 			command.ChangeTest(t, nil, test.d)
 		})
 	}
