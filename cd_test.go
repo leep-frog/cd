@@ -10,6 +10,15 @@ import (
 	"github.com/leep-frog/command"
 )
 
+func filepathAbs(t *testing.T, path string) string {
+	t.Helper()
+	a, err := filepath.Abs(path)
+	if err != nil {
+		t.Fatalf("Failed to get absolute file path: %v", err)
+	}
+	return a
+}
+
 func TestLoad(t *testing.T) {
 	for _, test := range []struct {
 		name string
@@ -72,7 +81,7 @@ func TestExecution(t *testing.T) {
 			d:        DotCLI(0),
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"cd ."},
+					Executable: []string{"cd "},
 				},
 			},
 		},
@@ -90,6 +99,22 @@ func TestExecution(t *testing.T) {
 			},
 		},
 		{
+			name:     "handles absolute path",
+			osStatFI: dirType,
+			d:        DotCLI(0),
+			etc: &command.ExecuteTestCase{
+				Args: []string{filepathAbs(t, "../../..")},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..")))),
+					},
+				},
+				WantData: &command.Data{
+					"path": command.StringValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
+				},
+			},
+		},
+		{
 			name:     "cds into directory of a file",
 			osStatFI: fileType,
 			d:        DotCLI(3),
@@ -97,11 +122,11 @@ func TestExecution(t *testing.T) {
 				Args: []string{"something/somewhere.txt"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", fp(filepath.Join("..", "..", "..", "something"))),
+						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..", "something")))),
 					},
 				},
 				WantData: &command.Data{
-					"path": command.StringValue("something/somewhere.txt"),
+					"path": command.StringValue(filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt"))),
 				},
 			},
 		},

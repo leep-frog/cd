@@ -60,20 +60,20 @@ func (d *Dot) Name() string {
 }
 
 func (d *Dot) directory() string {
-	path := make([]string, d.NumRecurs+1)
-	path[0] = "."
-	for i := 1; i <= d.NumRecurs; i++ {
+	path := make([]string, d.NumRecurs)
+	for i := 0; i < d.NumRecurs; i++ {
 		path[i] = ".."
 	}
 	return filepath.Join(path...)
 }
 
 func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
-	path := d.directory()
-	if data.HasArg(pathArg) {
-		path = filepath.Join(path, data.String(pathArg))
+	if !data.HasArg(pathArg) {
+		eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", fp(d.directory())))
+		return nil
 	}
 
+	path := data.String(pathArg)
 	if fi, err := osStat(path); err == nil && !fi.IsDir() {
 		path = filepath.Dir(path)
 	}
@@ -88,15 +88,29 @@ func fp(path string) string {
 }
 
 func (d *Dot) Node() *command.Node {
-	ao := &command.Completor{
-		SuggestionFetcher: &command.FileFetcher{
-			Directory:   d.directory(),
-			IgnoreFiles: true,
+	opts := []command.ArgOpt{
+		&command.Completor{
+			SuggestionFetcher: &command.FileFetcher{
+				Directory:   d.directory(),
+				IgnoreFiles: true,
+			},
 		},
+		command.Transformer(command.StringType, func(v *command.Value) (*command.Value, error) {
+			var path []string
+			for i := 0; i < d.NumRecurs; i++ {
+				path = append(path, "..")
+			}
+			path = append(path, v.String())
+			a, err := filepath.Abs(filepath.Join(path...))
+			if err != nil {
+				return nil, fmt.Errorf("failed to transform file path: %v", err)
+			}
+			return command.StringValue(a), nil
+		}, false),
 	}
 
 	return command.AliasNode(dirAliaserName, d, command.SerialNodes(
-		command.OptionalStringNode(pathArg, ao),
+		command.OptionalStringNode(pathArg, opts...),
 		command.SimpleProcessor(d.cd, nil),
 	))
 }
