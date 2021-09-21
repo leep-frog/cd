@@ -28,6 +28,9 @@ type Dot struct {
 }
 
 func (d *Dot) AliasMap() map[string]map[string][]string {
+	if d.Aliases == nil {
+		d.Aliases = map[string]map[string][]string{}
+	}
 	return d.Aliases
 }
 
