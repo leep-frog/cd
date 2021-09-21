@@ -19,10 +19,6 @@ func TestLoad(t *testing.T) {
 			name: "handles empty string",
 		},
 		{
-			name: "handles invalid json",
-			json: "}}",
-		},
-		{
 			name: "handles valid json",
 			json: `{"Field": "Value"}`,
 		},

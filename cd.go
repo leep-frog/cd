@@ -1,6 +1,7 @@
 package cd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,7 +11,8 @@ import (
 )
 
 const (
-	pathArg = "path"
+	pathArg        = "path"
+	dirAliaserName = "dirAliases"
 )
 
 var (
@@ -18,12 +20,38 @@ var (
 )
 
 type Dot struct {
+	// Aliases is a map from alias type to alias to absolute directory path.
+	Aliases   map[string]map[string][]string
 	NumRecurs int
+
+	changed bool
 }
 
-func (*Dot) Load(jsn string) error { return nil }
-func (*Dot) Changed() bool         { return false }
-func (*Dot) Setup() []string       { return nil }
+func (d *Dot) AliasMap() map[string]map[string][]string {
+	return d.Aliases
+}
+
+// Load creates a dot object from a JSON staring.
+func (d *Dot) Load(jsn string) error {
+	if d != nil {
+		r := d.NumRecurs
+		defer func() { d.NumRecurs = r }()
+	}
+
+	if jsn == "" {
+		d = &Dot{}
+		return nil
+	}
+
+	if err := json.Unmarshal([]byte(jsn), d); err != nil {
+		return fmt.Errorf("failed to unmarshal dot json: %v", err)
+	}
+	return nil
+}
+
+func (d *Dot) Changed() bool { return d.changed }
+func (d *Dot) MarkChanged()  { d.changed = true }
+func (*Dot) Setup() []string { return nil }
 func (d *Dot) Name() string {
 	return strings.Repeat(".", d.NumRecurs+1)
 }
@@ -64,10 +92,10 @@ func (d *Dot) Node() *command.Node {
 		},
 	}
 
-	return command.SerialNodes(
+	return command.AliasNode(dirAliaserName, d, command.SerialNodes(
 		command.OptionalStringNode(pathArg, ao),
 		command.SimpleProcessor(d.cd, nil),
-	)
+	))
 }
 
 func DotCLI(NumRecurs int) *Dot {
