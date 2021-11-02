@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	pathArg        = "path"
+	pathArg        = "PATH"
 	dirAliaserName = "dirAliases"
 )
 
@@ -109,10 +109,16 @@ func (d *Dot) Node() *command.Node {
 		}, false),
 	}
 
-	return command.AliasNode(dirAliaserName, d, command.SerialNodes(
-		command.OptionalStringNode(pathArg, opts...),
+	n := command.SerialNodes(
+		command.Description("Changes directories"),
+		command.OptionalStringNode(pathArg, "destination directory", opts...),
 		command.SimpleProcessor(d.cd, nil),
-	))
+	)
+	if d.NumRecurs == 0 {
+		// Only uses aliases with the single dot command.
+		return command.AliasNode(dirAliaserName, d, n)
+	}
+	return n
 }
 
 func DotCLI(NumRecurs int) *Dot {

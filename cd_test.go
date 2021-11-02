@@ -110,7 +110,7 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					"path": command.StringValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
+					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
 				},
 			},
 		},
@@ -126,7 +126,7 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					"path": command.StringValue(filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt"))),
+					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt"))),
 				},
 			},
 		},
@@ -150,4 +150,34 @@ func TestMetadata(t *testing.T) {
 	if got := d.Name(); got != wantName {
 		t.Errorf("Name() returned %q; want %q", got, wantName)
 	}
+}
+
+func TestUsage(t *testing.T) {
+	// Test with single dot
+	command.UsageTest(t, &command.UsageTestCase{
+		Node: DotCLI(0).Node(),
+		WantString: []string{
+			"Changes directories",
+			"* [ PATH ]",
+			"",
+			"Arguments:",
+			"  PATH: destination directory",
+			"",
+			"",
+			"Symbols:",
+			command.AliasDesc,
+		},
+	})
+
+	// Test with multiple dots
+	command.UsageTest(t, &command.UsageTestCase{
+		Node: DotCLI(1).Node(),
+		WantString: []string{
+			"Changes directories",
+			"[ PATH ]",
+			"",
+			"Arguments:",
+			"  PATH: destination directory",
+		},
+	})
 }
