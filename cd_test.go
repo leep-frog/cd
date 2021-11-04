@@ -162,6 +162,18 @@ func TestExecution(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "0-dot goes to the previous directory",
+			d:    DotCLI(0),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"-"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						"cd -",
+					},
+				},
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			oldStat := osStat
@@ -190,13 +202,17 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI(0).Node(),
 		WantString: []string{
 			"Changes directories",
-			"* [ PATH ... ]",
+			"< * [ PATH ... ]",
+			"",
+			"  Go to the previous directory",
+			"  -",
 			"",
 			"Arguments:",
 			"  PATH: destination directory",
 			"",
 			"Symbols:",
 			command.AliasDesc,
+			command.BranchDesc,
 		},
 	})
 

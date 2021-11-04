@@ -119,7 +119,19 @@ func (d *Dot) Node() *command.Node {
 	)
 	if d.NumRecurs == 0 {
 		// Only uses aliases with the single dot command.
-		return command.AliasNode(dirAliaserName, d, n)
+		return command.BranchNode(
+			map[string]*command.Node{
+				"-": command.SerialNodes(
+					command.Description("Go to the previous directory"),
+					command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						ed.Executable = append(ed.Executable, "cd -")
+						return nil
+					}, nil),
+				),
+			},
+			command.AliasNode(dirAliaserName, d, n),
+			false,
+		)
 	}
 	return n
 }
