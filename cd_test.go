@@ -110,7 +110,7 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
+					pathArg: command.StringListValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
 				},
 			},
 		},
@@ -126,7 +126,39 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt"))),
+					pathArg: command.StringListValue(filepathAbs(t, filepath.Join("..", "..", "..", "something"))),
+				},
+			},
+		},
+		{
+			name:     "0-dot cds down multiple paths",
+			osStatFI: dirType,
+			d:        DotCLI(0),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"some", "thing", "some", "where"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("some", "thing", "some", "where")))),
+					},
+				},
+				WantData: &command.Data{
+					pathArg: command.StringListValue(filepathAbs(t, filepath.Join("some")), "thing", "some", "where"),
+				},
+			},
+		},
+		{
+			name:     "1-dot cds down multiple paths",
+			osStatFI: dirType,
+			d:        DotCLI(1),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"some", "thing", "some", "where"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "some", "thing", "some", "where")))),
+					},
+				},
+				WantData: &command.Data{
+					pathArg: command.StringListValue(filepathAbs(t, filepath.Join("..", "some")), "thing", "some", "where"),
 				},
 			},
 		},
@@ -158,7 +190,7 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI(0).Node(),
 		WantString: []string{
 			"Changes directories",
-			"* [ PATH ]",
+			"* [ PATH ... ]",
 			"",
 			"Arguments:",
 			"  PATH: destination directory",
@@ -173,7 +205,7 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI(1).Node(),
 		WantString: []string{
 			"Changes directories",
-			"[ PATH ]",
+			"[ PATH ... ]",
 			"",
 			"Arguments:",
 			"  PATH: destination directory",

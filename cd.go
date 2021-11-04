@@ -73,12 +73,12 @@ func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data
 		return nil
 	}
 
-	path := data.String(pathArg)
-	if fi, err := osStat(path); err == nil && !fi.IsDir() {
-		path = filepath.Dir(path)
+	path := data.StringList(pathArg)
+	if fi, err := osStat(path[0]); err == nil && !fi.IsDir() {
+		path[0] = filepath.Dir(path[0])
 	}
 
-	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", fp(path)))
+	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", fp(filepath.Join(path...))))
 	return nil
 }
 
@@ -95,23 +95,26 @@ func (d *Dot) Node() *command.Node {
 				IgnoreFiles: true,
 			},
 		},
-		command.Transformer(command.StringType, func(v *command.Value) (*command.Value, error) {
+		command.Transformer(command.StringListType, func(v *command.Value) (*command.Value, error) {
 			var path []string
 			for i := 0; i < d.NumRecurs; i++ {
 				path = append(path, "..")
 			}
-			path = append(path, v.String())
+			path = append(path, v.StringList()[0])
 			a, err := filepath.Abs(filepath.Join(path...))
 			if err != nil {
 				return nil, fmt.Errorf("failed to transform file path: %v", err)
 			}
-			return command.StringValue(a), nil
+
+			v.StringList()[0] = a
+			return v, nil
 		}, false),
 	}
 
 	n := command.SerialNodes(
 		command.Description("Changes directories"),
-		command.OptionalStringNode(pathArg, "destination directory", opts...),
+		//command.OptionalStringNode(pathArg, "destination directory", opts...),
+		command.StringListNode(pathArg, "destination directory", 0, command.UnboundedList, opts...),
 		command.SimpleProcessor(d.cd, nil),
 	)
 	if d.NumRecurs == 0 {
