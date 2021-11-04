@@ -163,7 +163,6 @@ func TestUsage(t *testing.T) {
 			"Arguments:",
 			"  PATH: destination directory",
 			"",
-			"",
 			"Symbols:",
 			command.AliasDesc,
 		},
