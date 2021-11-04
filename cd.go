@@ -12,6 +12,7 @@ import (
 
 const (
 	pathArg        = "PATH"
+	subPathArg     = "SUB_PATH"
 	dirAliaserName = "dirAliases"
 )
 
@@ -73,12 +74,13 @@ func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data
 		return nil
 	}
 
-	path := data.StringList(pathArg)
-	if fi, err := osStat(path[0]); err == nil && !fi.IsDir() {
-		path[0] = filepath.Dir(path[0])
+	path := data.String(pathArg)
+	if fi, err := osStat(path); err == nil && !fi.IsDir() {
+		path = filepath.Dir(path)
 	}
 
-	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", fp(filepath.Join(path...))))
+	subPaths := append([]string{path}, data.StringList(subPathArg)...)
+	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", fp(filepath.Join(subPaths...))))
 	return nil
 }
 
@@ -95,26 +97,33 @@ func (d *Dot) Node() *command.Node {
 				IgnoreFiles: true,
 			},
 		},
-		command.Transformer(command.StringListType, func(v *command.Value) (*command.Value, error) {
+		command.Transformer(command.StringType, func(v *command.Value) (*command.Value, error) {
 			var path []string
 			for i := 0; i < d.NumRecurs; i++ {
 				path = append(path, "..")
 			}
-			path = append(path, v.StringList()[0])
+			path = append(path, v.String())
 			a, err := filepath.Abs(filepath.Join(path...))
 			if err != nil {
 				return nil, fmt.Errorf("failed to transform file path: %v", err)
 			}
 
-			v.StringList()[0] = a
-			return v, nil
+			return command.StringValue(a), nil
 		}, false),
+	}
+
+	subOpts := []command.ArgOpt{
+		&command.Completor{
+			SuggestionFetcher: &subPathFetcher{},
+		},
 	}
 
 	n := command.SerialNodes(
 		command.Description("Changes directories"),
 		//command.OptionalStringNode(pathArg, "destination directory", opts...),
-		command.StringListNode(pathArg, "destination directory", 0, command.UnboundedList, opts...),
+		//command.StringListNode(pathArg, "destination directory", 0, command.UnboundedList, opts...),
+		command.OptionalStringNode(pathArg, "destination directory", opts...),
+		command.StringListNode(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
 		command.SimpleProcessor(d.cd, nil),
 	)
 	if d.NumRecurs == 0 {
@@ -140,4 +149,16 @@ func DotCLI(NumRecurs int) *Dot {
 	return &Dot{
 		NumRecurs: NumRecurs,
 	}
+}
+
+type subPathFetcher struct{}
+
+func (spf *subPathFetcher) Fetch(v *command.Value, d *command.Data) *command.Completion {
+	sl := v.StringList()
+	sl = sl[:len(sl)-1]
+	ff := &command.FileFetcher{
+		Directory:   filepath.Join(append([]string{d.String(pathArg)}, sl...)...),
+		IgnoreFiles: true,
+	}
+	return ff.Fetch(v, d)
 }

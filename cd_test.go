@@ -110,7 +110,7 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					pathArg: command.StringListValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
+					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
 				},
 			},
 		},
@@ -126,7 +126,7 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					pathArg: command.StringListValue(filepathAbs(t, filepath.Join("..", "..", "..", "something"))),
+					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt"))),
 				},
 			},
 		},
@@ -142,7 +142,8 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					pathArg: command.StringListValue(filepathAbs(t, filepath.Join("some")), "thing", "some", "where"),
+					pathArg:    command.StringValue(filepathAbs(t, filepath.Join("some"))),
+					subPathArg: command.StringListValue("thing", "some", "where"),
 				},
 			},
 		},
@@ -158,7 +159,8 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{
-					pathArg: command.StringListValue(filepathAbs(t, filepath.Join("..", "some")), "thing", "some", "where"),
+					pathArg:    command.StringValue(filepathAbs(t, filepath.Join("..", "some"))),
+					subPathArg: command.StringListValue("thing", "some", "where"),
 				},
 			},
 		},
@@ -202,13 +204,14 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI(0).Node(),
 		WantString: []string{
 			"Changes directories",
-			"< * [ PATH ... ]",
+			"< * [ PATH ] [ SUB_PATH ... ]",
 			"",
 			"  Go to the previous directory",
 			"  -",
 			"",
 			"Arguments:",
 			"  PATH: destination directory",
+			"  SUB_PATH: subdirectories to continue to",
 			"",
 			"Symbols:",
 			command.AliasDesc,
@@ -221,10 +224,11 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI(1).Node(),
 		WantString: []string{
 			"Changes directories",
-			"[ PATH ... ]",
+			"[ PATH ] [ SUB_PATH ... ]",
 			"",
 			"Arguments:",
 			"  PATH: destination directory",
+			"  SUB_PATH: subdirectories to continue to",
 		},
 	})
 }
