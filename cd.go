@@ -102,7 +102,7 @@ func (d *Dot) Node() *command.Node {
 			for i := 0; i < d.NumRecurs; i++ {
 				path = append(path, "..")
 			}
-			path = append(path, v.String())
+			path = append(path, v.ToString())
 			a, err := filepath.Abs(filepath.Join(path...))
 			if err != nil {
 				return nil, fmt.Errorf("failed to transform file path: %v", err)
@@ -154,7 +154,7 @@ func DotCLI(NumRecurs int) *Dot {
 type subPathFetcher struct{}
 
 func (spf *subPathFetcher) Fetch(v *command.Value, d *command.Data) *command.Completion {
-	sl := v.StringList()
+	sl := v.ToStringList()
 	sl = sl[:len(sl)-1]
 	ff := &command.FileFetcher{
 		Directory:   filepath.Join(append([]string{d.String(pathArg)}, sl...)...),

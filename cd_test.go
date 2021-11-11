@@ -109,9 +109,9 @@ func TestExecution(t *testing.T) {
 						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..")))),
 					},
 				},
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
-				},
+				}},
 			},
 		},
 		{
@@ -125,9 +125,9 @@ func TestExecution(t *testing.T) {
 						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..", "something")))),
 					},
 				},
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt"))),
-				},
+				}},
 			},
 		},
 		{
@@ -141,10 +141,10 @@ func TestExecution(t *testing.T) {
 						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("some", "thing", "some", "where")))),
 					},
 				},
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					pathArg:    command.StringValue(filepathAbs(t, filepath.Join("some"))),
 					subPathArg: command.StringListValue("thing", "some", "where"),
-				},
+				}},
 			},
 		},
 		{
@@ -158,10 +158,10 @@ func TestExecution(t *testing.T) {
 						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "some", "thing", "some", "where")))),
 					},
 				},
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					pathArg:    command.StringValue(filepathAbs(t, filepath.Join("..", "some"))),
 					subPathArg: command.StringListValue("thing", "some", "where"),
-				},
+				}},
 			},
 		},
 		{
