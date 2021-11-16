@@ -109,6 +109,7 @@ func TestExecution(t *testing.T) {
 						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..")))),
 					},
 				},
+
 				WantData: &command.Data{Values: map[string]*command.Value{
 					pathArg: command.StringValue(filepathAbs(t, filepath.Join("..", "..", ".."))),
 				}},
