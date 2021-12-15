@@ -190,6 +190,137 @@ func TestExecution(t *testing.T) {
 	}
 }
 
+func TestAutocomplete(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		ctc  *command.CompleteTestCase
+	}{
+		{
+			name: "dot completes all directories",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Want: []string{
+					".git/",
+					"testing/",
+					" ",
+				},
+			},
+		},
+		{
+			name: "dot completes all directories with command",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd ",
+				Want: []string{
+					".git/",
+					"testing/",
+					" ",
+				},
+			},
+		},
+		{
+			name: "dot handles no match",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd uhh",
+			},
+		},
+		{
+			name: "dot completes directories that match",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd te",
+				Want: []string{
+					"testing/",
+					"testing/_",
+				},
+			},
+		},
+		{
+			name: "dot completes nested directories",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd testing/o",
+				Want: []string{
+					"testing/other/",
+					"testing/other/_",
+				},
+			},
+		},
+		{
+			name: "dot completes sub directories",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd testing ",
+				Want: []string{
+					"dir1/",
+					"dir2/",
+					"other/",
+					" ",
+				},
+			},
+		},
+		{
+			name: "dot completes sub nested directories",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd testing dir1/",
+				Want: []string{
+					"another/",
+					"folderA/",
+					"folderB/",
+					" ",
+				},
+			},
+		},
+		{
+			name: "dot completes partial sub nested directories",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd testing dir1/fold",
+				Want: []string{
+					"dir1/folder",
+					"dir1/folder_",
+				},
+			},
+		},
+		{
+			name: "dot completes partial sub directories",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd testing d",
+				Want: []string{
+					"dir",
+					"dir_",
+				},
+			},
+		},
+		{
+			name: "dot completes partial sub directories",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd testing d",
+				Want: []string{
+					"dir",
+					"dir_",
+				},
+			},
+		},
+		{
+			name: "dot completion handles no match for sub directories",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI(0).Node(),
+				Args: "cmd testing um",
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			test.ctc.SkipDataCheck = true
+			command.CompleteTest(t, test.ctc)
+		})
+	}
+}
+
 func TestMetadata(t *testing.T) {
 	d := DotCLI(4)
 

@@ -50,5 +50,9 @@ github.com/leep-frog/command v0.0.0-20211112014620-46303a164efe h1:m+QUIYi16AX5i
 github.com/leep-frog/command v0.0.0-20211112014620-46303a164efe/go.mod h1:ir5/yEP+6f6CQa4NivSdA1lPeyq+nouR7WjSfdXnL8g=
 github.com/leep-frog/command v0.0.0-20211116190412-1370391fe7f9 h1:9BkDmvHprm6rzvx1cYZupwtGG4UN5mZP3xgb4OwfSI0=
 github.com/leep-frog/command v0.0.0-20211116190412-1370391fe7f9/go.mod h1:ir5/yEP+6f6CQa4NivSdA1lPeyq+nouR7WjSfdXnL8g=
+github.com/leep-frog/command v0.0.0-20211215134726-e9612468a1e6 h1:ieB8Dau9u3fAGAKIPV6xshAlODC/r18UE5dcoYswq8g=
+github.com/leep-frog/command v0.0.0-20211215134726-e9612468a1e6/go.mod h1:ir5/yEP+6f6CQa4NivSdA1lPeyq+nouR7WjSfdXnL8g=
+github.com/leep-frog/command v0.0.0-20211215141551-8385e9854ad8 h1:U1kbWor98caNQbOlC0qwT+zFldZSBcFbPIQLk7NrpBs=
+github.com/leep-frog/command v0.0.0-20211215141551-8385e9854ad8/go.mod h1:ir5/yEP+6f6CQa4NivSdA1lPeyq+nouR7WjSfdXnL8g=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 h1:E7g+9GITq07hpfrRu66IVDexMakfv52eLZ2CXBWiKr4=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
