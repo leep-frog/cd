@@ -114,7 +114,7 @@ func (d *Dot) Node() *command.Node {
 
 	subOpts := []command.ArgOpt{
 		&command.Completor{
-			SuggestionFetcher: &subPathFetcher{},
+			SuggestionFetcher: &subPathFetcher{d},
 		},
 	}
 
@@ -151,13 +151,24 @@ func DotCLI(NumRecurs int) *Dot {
 	}
 }
 
-type subPathFetcher struct{}
+type subPathFetcher struct {
+	d *Dot
+}
 
 func (spf *subPathFetcher) Fetch(v *command.Value, d *command.Data) *command.Completion {
 	sl := v.ToStringList()
 	sl = sl[:len(sl)-1]
+
+	base := filepath.Join(append(
+		[]string{
+			spf.d.directory(),
+			d.String(pathArg),
+		},
+		sl...,
+	)...)
+
 	ff := &command.FileFetcher{
-		Directory:   filepath.Join(append([]string{d.String(pathArg)}, sl...)...),
+		Directory:   base,
 		IgnoreFiles: true,
 	}
 	return ff.Fetch(v, d)
