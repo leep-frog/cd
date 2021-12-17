@@ -201,6 +201,7 @@ func TestAutocomplete(t *testing.T) {
 				Node: DotCLI(0).Node(),
 				Want: []string{
 					".git/",
+					"cmd/",
 					"testing/",
 					" ",
 				},
@@ -213,6 +214,7 @@ func TestAutocomplete(t *testing.T) {
 				Args: "cmd ",
 				Want: []string{
 					".git/",
+					"cmd/",
 					"testing/",
 					" ",
 				},
