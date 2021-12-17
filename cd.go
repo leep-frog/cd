@@ -68,9 +68,9 @@ func (d *Dot) directory() string {
 	return filepath.Join(path...)
 }
 
-func (d *Dot) cd(data *command.Data) []string {
+func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 	if !data.HasArg(pathArg) {
-		return []string{fmt.Sprintf("cd %s", fp(d.directory()))}
+		return []string{fmt.Sprintf("cd %s", fp(d.directory()))}, nil
 	}
 
 	path := data.String(pathArg)
@@ -79,7 +79,7 @@ func (d *Dot) cd(data *command.Data) []string {
 	}
 
 	subPaths := append([]string{path}, data.StringList(subPathArg)...)
-	return []string{fmt.Sprintf("cd %s", fp(filepath.Join(subPaths...)))}
+	return []string{fmt.Sprintf("cd %s", fp(filepath.Join(subPaths...)))}, nil
 }
 
 func fp(path string) string {
