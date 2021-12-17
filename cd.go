@@ -68,10 +68,9 @@ func (d *Dot) directory() string {
 	return filepath.Join(path...)
 }
 
-func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
+func (d *Dot) cd(data *command.Data) []string {
 	if !data.HasArg(pathArg) {
-		eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", fp(d.directory())))
-		return nil
+		return []string{fmt.Sprintf("cd %s", fp(d.directory()))}
 	}
 
 	path := data.String(pathArg)
@@ -80,8 +79,7 @@ func (d *Dot) cd(input *command.Input, output command.Output, data *command.Data
 	}
 
 	subPaths := append([]string{path}, data.StringList(subPathArg)...)
-	eData.Executable = append(eData.Executable, fmt.Sprintf("cd %s", fp(filepath.Join(subPaths...))))
-	return nil
+	return []string{fmt.Sprintf("cd %s", fp(filepath.Join(subPaths...)))}
 }
 
 func fp(path string) string {
@@ -124,7 +122,7 @@ func (d *Dot) Node() *command.Node {
 		//command.StringListNode(pathArg, "destination directory", 0, command.UnboundedList, opts...),
 		command.OptionalStringNode(pathArg, "destination directory", opts...),
 		command.StringListNode(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
-		command.SimpleProcessor(d.cd, nil),
+		command.ExecutableNode(d.cd),
 	)
 	if d.NumRecurs == 0 {
 		// Only uses aliases with the single dot command.
@@ -132,12 +130,10 @@ func (d *Dot) Node() *command.Node {
 			map[string]*command.Node{
 				"-": command.SerialNodes(
 					command.Description("Go to the previous directory"),
-					command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-						ed.Executable = append(ed.Executable, "cd -")
-						return nil
-					}, nil),
+					command.SimpleExecutableNode("cd -"),
 				),
 			},
+			// TODO: prefer directory over alias
 			command.AliasNode(dirAliaserName, d, n),
 			false,
 		)
