@@ -151,7 +151,7 @@ type subPathFetcher struct {
 	d *Dot
 }
 
-func (spf *subPathFetcher) Fetch(v *command.Value, d *command.Data) *command.Completion {
+func (spf *subPathFetcher) Fetch(v *command.Value, d *command.Data) (*command.Completion, error) {
 	sl := v.ToStringList()
 	sl = sl[:len(sl)-1]
 
