@@ -135,7 +135,7 @@ func (d *Dot) Node() *command.Node {
 			},
 			// TODO: prefer directory over alias
 			command.AliasNode(dirAliaserName, d, n),
-			false,
+			command.DontCompleteSubcommands(),
 		)
 	}
 	return n
