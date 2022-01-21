@@ -69,7 +69,7 @@ func (d *Dot) directory() string {
 }
 
 func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
-	if !data.HasArg(pathArg) {
+	if !data.Has(pathArg) {
 		return []string{fmt.Sprintf("cd %s", fp(d.directory()))}, nil
 	}
 
@@ -88,40 +88,38 @@ func fp(path string) string {
 }
 
 func (d *Dot) Node() *command.Node {
-	opts := []command.ArgOpt{
-		&command.Completor{
-			SuggestionFetcher: &command.FileFetcher{
+	opts := []command.ArgOpt[string]{
+		&command.Completor[string]{
+			SuggestionFetcher: &command.FileFetcher[string]{
 				Directory:   d.directory(),
 				IgnoreFiles: true,
 			},
 		},
-		command.Transformer(command.StringType, func(v *command.Value) (*command.Value, error) {
+		command.NewTransformer[string](func(v string) (string, error) {
 			var path []string
 			for i := 0; i < d.NumRecurs; i++ {
 				path = append(path, "..")
 			}
-			path = append(path, v.ToString())
+			path = append(path, v)
 			a, err := filepath.Abs(filepath.Join(path...))
 			if err != nil {
-				return nil, fmt.Errorf("failed to transform file path: %v", err)
+				return "", fmt.Errorf("failed to transform file path: %v", err)
 			}
 
-			return command.StringValue(a), nil
+			return a, nil
 		}, false),
 	}
 
-	subOpts := []command.ArgOpt{
-		&command.Completor{
+	subOpts := []command.ArgOpt[[]string]{
+		&command.Completor[[]string]{
 			SuggestionFetcher: &subPathFetcher{d},
 		},
 	}
 
 	n := command.SerialNodes(
 		command.Description("Changes directories"),
-		//command.OptionalStringNode(pathArg, "destination directory", opts...),
-		//command.StringListNode(pathArg, "destination directory", 0, command.UnboundedList, opts...),
-		command.OptionalStringNode(pathArg, "destination directory", opts...),
-		command.StringListNode(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
+		command.OptionalArg[string](pathArg, "destination directory", opts...),
+		command.ListArg[string](subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
 		command.ExecutableNode(d.cd),
 	)
 	if d.NumRecurs == 0 {
@@ -151,21 +149,19 @@ type subPathFetcher struct {
 	d *Dot
 }
 
-func (spf *subPathFetcher) Fetch(v *command.Value, d *command.Data) (*command.Completion, error) {
-	sl := v.ToStringList()
-	sl = sl[:len(sl)-1]
-
+func (spf *subPathFetcher) Fetch(sl []string, d *command.Data) (*command.Completion, error) {
 	base := filepath.Join(append(
 		[]string{
 			spf.d.directory(),
 			d.String(pathArg),
 		},
-		sl...,
+		// Remove last file/directory part from provided path
+		sl[:len(sl)-1]...,
 	)...)
 
-	ff := &command.FileFetcher{
+	ff := &command.FileFetcher[[]string]{
 		Directory:   base,
 		IgnoreFiles: true,
 	}
-	return ff.Fetch(v, d)
+	return ff.Fetch(sl, d)
 }
