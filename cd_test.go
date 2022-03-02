@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/leep-frog/command"
 )
 
@@ -61,6 +62,7 @@ func TestExecution(t *testing.T) {
 	for _, test := range []struct {
 		name      string
 		d         *Dot
+		want      *Dot
 		etc       *command.ExecuteTestCase
 		osStatFI  os.FileInfo
 		osStatErr error
@@ -102,6 +104,13 @@ func TestExecution(t *testing.T) {
 			name:     "handles absolute path",
 			osStatFI: dirType,
 			d:        DotCLI(0),
+			want: &Dot{
+				Caches: map[string][][]string{
+					cacheName: [][]string{{
+						filepathAbs(t, filepath.Join("..", "..", "..")),
+					}},
+				},
+			},
 			etc: &command.ExecuteTestCase{
 				Args: []string{filepathAbs(t, "../../..")},
 				WantExecuteData: &command.ExecuteData{
@@ -109,7 +118,6 @@ func TestExecution(t *testing.T) {
 						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..")))),
 					},
 				},
-
 				WantData: &command.Data{Values: map[string]interface{}{
 					pathArg: filepathAbs(t, filepath.Join("..", "..", "..")),
 				}},
@@ -146,6 +154,13 @@ func TestExecution(t *testing.T) {
 					pathArg: filepathAbs(t, filepath.Join("some where")),
 				}},
 			},
+			want: &Dot{
+				Caches: map[string][][]string{
+					cacheName: [][]string{{
+						filepathAbs(t, filepath.Join("some where")),
+					}},
+				},
+			},
 		},
 		{
 			name:     "0-dot cds down multiple paths",
@@ -162,6 +177,14 @@ func TestExecution(t *testing.T) {
 					pathArg:    filepathAbs(t, filepath.Join("some")),
 					subPathArg: []string{"thing", "some", "where"},
 				}},
+			},
+			want: &Dot{
+				Caches: map[string][][]string{
+					cacheName: [][]string{{
+						filepathAbs(t, filepath.Join("some")),
+						"thing", "some", "where",
+					}},
+				},
 			},
 		},
 		{
@@ -201,7 +224,7 @@ func TestExecution(t *testing.T) {
 
 			test.etc.Node = test.d.Node()
 			command.ExecuteTest(t, test.etc)
-			command.ChangeTest(t, nil, test.d)
+			command.ChangeTest(t, test.want, test.d, cmpopts.IgnoreUnexported(Dot{}), cmpopts.EquateEmpty())
 		})
 	}
 }
@@ -354,7 +377,7 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI(0).Node(),
 		WantString: []string{
 			"Changes directories",
-			"< * [ PATH ] [ SUB_PATH ... ]",
+			"< ^ * [ PATH ] [ SUB_PATH ... ]",
 			"",
 			"  Go to the previous directory",
 			"  -",
@@ -366,6 +389,7 @@ func TestUsage(t *testing.T) {
 			"Symbols:",
 			command.AliasDesc,
 			command.BranchDesc,
+			command.CacheDesc,
 		},
 	})
 

@@ -14,6 +14,7 @@ const (
 	pathArg        = "PATH"
 	subPathArg     = "SUB_PATH"
 	dirAliaserName = "dirAliases"
+	cacheName = "dotCache"
 )
 
 var (
@@ -24,6 +25,7 @@ type Dot struct {
 	// Aliases is a map from alias type to alias to absolute directory path.
 	Aliases   map[string]map[string][]string
 	NumRecurs int
+	Caches map[string][][]string
 
 	changed bool
 }
@@ -33,6 +35,13 @@ func (d *Dot) AliasMap() map[string]map[string][]string {
 		d.Aliases = map[string]map[string][]string{}
 	}
 	return d.Aliases
+}
+
+func (d *Dot) Cache() map[string][][]string {
+	if d.Caches == nil {
+		d.Caches = map[string][][]string{}
+	}
+	return d.Caches
 }
 
 // Load creates a dot object from a JSON staring.
@@ -123,7 +132,7 @@ func (d *Dot) Node() *command.Node {
 		command.ExecutableNode(d.cd),
 	)
 	if d.NumRecurs == 0 {
-		// Only uses aliases with the single dot command.
+		// Only uses cache and aliases with the single dot command.
 		return command.BranchNode(
 			map[string]*command.Node{
 				"-": command.SerialNodes(
@@ -132,7 +141,7 @@ func (d *Dot) Node() *command.Node {
 				),
 			},
 			// TODO: prefer directory over alias
-			command.AliasNode(dirAliaserName, d, n),
+			command.CacheNode(cacheName, d, command.AliasNode(dirAliaserName, d, n)),
 			command.DontCompleteSubcommands(),
 		)
 	}
