@@ -132,6 +132,22 @@ func TestExecution(t *testing.T) {
 			},
 		},
 		{
+			name:     "cds into directory with spaces",
+			osStatFI: dirType,
+			d:        DotCLI(0),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"some where/"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("some where")))),
+					},
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					pathArg: filepathAbs(t, filepath.Join("some where")),
+				}},
+			},
+		},
+		{
 			name:     "0-dot cds down multiple paths",
 			osStatFI: dirType,
 			d:        DotCLI(0),

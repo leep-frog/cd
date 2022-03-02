@@ -84,7 +84,7 @@ func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 
 func fp(path string) string {
 	// Needed for use in msys2 mingw.
-	return strings.ReplaceAll(path, "\\", "\\\\")
+	return strings.ReplaceAll(strings.ReplaceAll(path, " ", "\\ "), "\\", "\\\\")
 }
 
 func (d *Dot) Node() *command.Node {
