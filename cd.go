@@ -152,7 +152,6 @@ func DotCLI(NumRecurs int) *Dot {
 	d := &Dot{
 		NumRecurs: NumRecurs,
 	}
-	fmt.Println(d.directory())
 	return d
 }
 
