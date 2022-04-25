@@ -14,7 +14,7 @@ const (
 	pathArg        = "PATH"
 	subPathArg     = "SUB_PATH"
 	dirAliaserName = "dirAliases"
-	cacheName = "dotCache"
+	cacheName      = "dotCache"
 )
 
 var (
@@ -25,7 +25,7 @@ type Dot struct {
 	// Aliases is a map from alias type to alias to absolute directory path.
 	Aliases   map[string]map[string][]string
 	NumRecurs int
-	Caches map[string][][]string
+	Caches    map[string][][]string
 
 	changed bool
 }
@@ -149,9 +149,11 @@ func (d *Dot) Node() *command.Node {
 }
 
 func DotCLI(NumRecurs int) *Dot {
-	return &Dot{
+	d := &Dot{
 		NumRecurs: NumRecurs,
 	}
+	fmt.Println(d.directory())
+	return d
 }
 
 type subPathFetcher struct {
