@@ -1,7 +1,6 @@
 package cd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,8 +22,11 @@ var (
 
 type Dot struct {
 	// Aliases is a map from alias type to alias to absolute directory path.
-	Aliases   map[string]map[string][]string
-	NumRecurs int
+	Aliases map[string]map[string][]string
+	// NumRecurs is the number of directories to go up.
+	// This is ignored during JSON marshaling/unmarshaling because it is
+	// creaed at instantiation.
+	NumRecurs int `json:"-"`
 	Caches    map[string][][]string
 
 	changed bool
@@ -42,24 +44,6 @@ func (d *Dot) Cache() map[string][][]string {
 		d.Caches = map[string][][]string{}
 	}
 	return d.Caches
-}
-
-// Load creates a dot object from a JSON staring.
-func (d *Dot) Load(jsn string) error {
-	if d != nil {
-		r := d.NumRecurs
-		defer func() { d.NumRecurs = r }()
-	}
-
-	if jsn == "" {
-		d = &Dot{}
-		return nil
-	}
-
-	if err := json.Unmarshal([]byte(jsn), d); err != nil {
-		return fmt.Errorf("failed to unmarshal dot json: %v", err)
-	}
-	return nil
 }
 
 func (d *Dot) Changed() bool { return d.changed }
@@ -104,7 +88,7 @@ func (d *Dot) Node() *command.Node {
 				IgnoreFiles: true,
 			},
 		},
-		command.NewTransformer[string](func(v string) (string, error) {
+		command.NewTransformer(func(v string) (string, error) {
 			var path []string
 			for i := 0; i < d.NumRecurs; i++ {
 				path = append(path, "..")
@@ -127,8 +111,8 @@ func (d *Dot) Node() *command.Node {
 
 	n := command.SerialNodes(
 		command.Description("Changes directories"),
-		command.OptionalArg[string](pathArg, "destination directory", opts...),
-		command.ListArg[string](subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
+		command.OptionalArg(pathArg, "destination directory", opts...),
+		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
 		command.ExecutableNode(d.cd),
 	)
 	if d.NumRecurs == 0 {

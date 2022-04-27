@@ -1,6 +1,7 @@
 package cd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,17 +27,22 @@ func TestLoad(t *testing.T) {
 		json string
 	}{
 		{
-			name: "handles empty string",
-		},
-		{
 			name: "handles valid json",
 			json: `{"Field": "Value"}`,
 		},
+		{
+			name: "ignores NumRecurs",
+			json: `{"NumRecurs": 6}`,
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			d := &Dot{}
-			if err := d.Load(test.json); err != nil {
-				t.Fatalf("Load(%v) should return nil; got %v", test.json, err)
+			nr := 3
+			d := DotCLI(nr)
+			if err := json.Unmarshal([]byte(test.json), d); err != nil {
+				t.Fatalf("UnmarshalJSON(%v) should return nil; got %v", test.json, err)
+			}
+			if d.NumRecurs != nr {
+				t.Fatalf("UnmarshalJSON(%v) changed NumRecurs when shouldn't have", test.json)
 			}
 		})
 	}
@@ -106,7 +112,7 @@ func TestExecution(t *testing.T) {
 			d:        DotCLI(0),
 			want: &Dot{
 				Caches: map[string][][]string{
-					cacheName: [][]string{{
+					cacheName: {{
 						filepathAbs(t, filepath.Join("..", "..", "..")),
 					}},
 				},
@@ -156,7 +162,7 @@ func TestExecution(t *testing.T) {
 			},
 			want: &Dot{
 				Caches: map[string][][]string{
-					cacheName: [][]string{{
+					cacheName: {{
 						filepathAbs(t, filepath.Join("some where")),
 					}},
 				},
@@ -180,7 +186,7 @@ func TestExecution(t *testing.T) {
 			},
 			want: &Dot{
 				Caches: map[string][][]string{
-					cacheName: [][]string{{
+					cacheName: {{
 						filepathAbs(t, filepath.Join("some")),
 						"thing", "some", "where",
 					}},
