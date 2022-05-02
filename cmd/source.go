@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/leep-frog/cd"
 	"github.com/leep-frog/command/sourcerer"
 )
@@ -10,5 +12,5 @@ func main() {
 	for i := 0; i < 10; i++ {
 		clis = append(clis, cd.DotCLI(i))
 	}
-	sourcerer.Source(clis...)
+	os.Exit(sourcerer.Source(clis...))
 }

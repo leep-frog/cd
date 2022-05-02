@@ -81,6 +81,11 @@ func TestExecution(t *testing.T) {
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd .."},
 				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						"up": 0,
+					},
+				},
 			},
 		},
 		{
@@ -90,6 +95,11 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd "},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						"up": 0,
+					},
 				},
 			},
 		},
@@ -102,6 +112,11 @@ func TestExecution(t *testing.T) {
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fmt.Sprintf("cd %s", fp(filepath.Join("..", ".."))),
+					},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						"up": 0,
 					},
 				},
 			},
@@ -126,6 +141,7 @@ func TestExecution(t *testing.T) {
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					pathArg: filepathAbs(t, filepath.Join("..", "..", "..")),
+					"up":    0,
 				}},
 			},
 		},
@@ -142,6 +158,7 @@ func TestExecution(t *testing.T) {
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					pathArg: filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
+					"up":    0,
 				}},
 			},
 		},
@@ -158,6 +175,7 @@ func TestExecution(t *testing.T) {
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					pathArg: filepathAbs(t, filepath.Join("some where")),
+					"up":    0,
 				}},
 			},
 			want: &Dot{
@@ -182,6 +200,7 @@ func TestExecution(t *testing.T) {
 				WantData: &command.Data{Values: map[string]interface{}{
 					pathArg:    filepathAbs(t, filepath.Join("some")),
 					subPathArg: []string{"thing", "some", "where"},
+					"up":       0,
 				}},
 			},
 			want: &Dot{
@@ -207,6 +226,7 @@ func TestExecution(t *testing.T) {
 				WantData: &command.Data{Values: map[string]interface{}{
 					pathArg:    filepathAbs(t, filepath.Join("..", "some")),
 					subPathArg: []string{"thing", "some", "where"},
+					"up":       0,
 				}},
 			},
 		},
@@ -383,7 +403,7 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI(0).Node(),
 		WantString: []string{
 			"Changes directories",
-			"< ^ * [ PATH ] [ SUB_PATH ... ]",
+			"< ^ * [ PATH ] [ SUB_PATH ... ] --up|-u",
 			"",
 			"  Go to the previous directory",
 			"  -",
@@ -392,8 +412,11 @@ func TestUsage(t *testing.T) {
 			"  PATH: destination directory",
 			"  SUB_PATH: subdirectories to continue to",
 			"",
+			"Flags:",
+			"  [u] up: Number of directories to go up when cd-ing",
+			"",
 			"Symbols:",
-			command.AliasDesc,
+			command.ShortcutDesc,
 			command.BranchDesc,
 			command.CacheDesc,
 		},
@@ -404,11 +427,14 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI(1).Node(),
 		WantString: []string{
 			"Changes directories",
-			"[ PATH ] [ SUB_PATH ... ]",
+			"[ PATH ] [ SUB_PATH ... ] --up|-u",
 			"",
 			"Arguments:",
 			"  PATH: destination directory",
 			"  SUB_PATH: subdirectories to continue to",
+			"",
+			"Flags:",
+			"  [u] up: Number of directories to go up when cd-ing",
 		},
 	})
 }

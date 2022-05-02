@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	pathArg        = "PATH"
-	subPathArg     = "SUB_PATH"
-	dirAliaserName = "dirAliases"
-	cacheName      = "dotCache"
+	pathArg         = "PATH"
+	subPathArg      = "SUB_PATH"
+	dirShortcutName = "dirShortcuts"
+	cacheName       = "dotCache"
 )
 
 var (
@@ -21,8 +21,8 @@ var (
 )
 
 type Dot struct {
-	// Aliases is a map from alias type to alias to absolute directory path.
-	Aliases map[string]map[string][]string
+	// Shortcuts is a map from shortcut type to shortcuts to absolute directory path.
+	Shortcuts map[string]map[string][]string
 	// NumRecurs is the number of directories to go up.
 	// This is ignored during JSON marshaling/unmarshaling because it is
 	// creaed at instantiation.
@@ -32,11 +32,11 @@ type Dot struct {
 	changed bool
 }
 
-func (d *Dot) AliasMap() map[string]map[string][]string {
-	if d.Aliases == nil {
-		d.Aliases = map[string]map[string][]string{}
+func (d *Dot) ShortcutMap() map[string]map[string][]string {
+	if d.Shortcuts == nil {
+		d.Shortcuts = map[string]map[string][]string{}
 	}
-	return d.Aliases
+	return d.Shortcuts
 }
 
 func (d *Dot) Cache() map[string][][]string {
@@ -83,7 +83,7 @@ func fp(path string) string {
 func (d *Dot) Node() *command.Node {
 	opts := []command.ArgOpt[string]{
 		&command.Completor[string]{
-			SuggestionFetcher: &command.FileFetcher[string]{
+			Fetcher: &command.FileFetcher[string]{
 				Directory:   d.directory(),
 				IgnoreFiles: true,
 			},
@@ -105,18 +105,22 @@ func (d *Dot) Node() *command.Node {
 
 	subOpts := []command.ArgOpt[[]string]{
 		&command.Completor[[]string]{
-			SuggestionFetcher: &subPathFetcher{d},
+			Fetcher: &subPathFetcher{d},
 		},
 	}
 
 	n := command.SerialNodes(
 		command.Description("Changes directories"),
+		command.NewFlagNode(
+			command.NewFlag[int]("up", 'u', "Number of directories to go up when cd-ing", command.Default(0)),
+		),
 		command.OptionalArg(pathArg, "destination directory", opts...),
 		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
 		command.ExecutableNode(d.cd),
 	)
+
 	if d.NumRecurs == 0 {
-		// Only uses cache and aliases with the single dot command.
+		// Only uses cache and Shortcuts with the single dot command.
 		return command.BranchNode(
 			map[string]*command.Node{
 				"-": command.SerialNodes(
@@ -124,8 +128,8 @@ func (d *Dot) Node() *command.Node {
 					command.SimpleExecutableNode("cd -"),
 				),
 			},
-			// TODO: prefer directory over alias
-			command.CacheNode(cacheName, d, command.AliasNode(dirAliaserName, d, n)),
+			// TODO: prefer directory over shortcut
+			command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, n)),
 			command.DontCompleteSubcommands(),
 		)
 	}
