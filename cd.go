@@ -110,7 +110,7 @@ func (d *Dot) Node() *command.Node {
 		},
 	}
 
-	n := command.SerialNodes(
+	dfltNode := command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
 		command.Description("Changes directories"),
 		command.NewFlagNode(
 			command.NewFlag[int]("up", 'u', "Number of directories to go up when cd-ing", command.Default(0)),
@@ -118,10 +118,8 @@ func (d *Dot) Node() *command.Node {
 		command.OptionalArg(pathArg, "destination directory", opts...),
 		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
 		command.ExecutableNode(d.cd),
-	)
+	)))
 
-	//if d.NumRecurs == 0 {
-	// Only uses cache and Shortcuts with the single dot command.
 	return command.BranchNode(
 		map[string]*command.Node{
 			"-": command.SerialNodes(
@@ -129,11 +127,9 @@ func (d *Dot) Node() *command.Node {
 				command.SimpleExecutableNode("cd -"),
 			),
 		},
-		// TODO: prefer directory over shortcut
-		command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, n)),
+		dfltNode,
 		command.DontCompleteSubcommands(),
 	)
-	//}
 	return n
 }
 
