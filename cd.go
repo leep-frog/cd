@@ -130,7 +130,6 @@ func (d *Dot) Node() *command.Node {
 		dfltNode,
 		command.DontCompleteSubcommands(),
 	)
-	return n
 }
 
 func DotCLI() *Dot {
