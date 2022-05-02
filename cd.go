@@ -23,10 +23,6 @@ var (
 type Dot struct {
 	// Shortcuts is a map from shortcut type to shortcuts to absolute directory path.
 	Shortcuts map[string]map[string][]string
-	// NumRecurs is the number of directories to go up.
-	// This is ignored during JSON marshaling/unmarshaling because it is
-	// creaed at instantiation.
-	NumRecurs int `json:"-"`
 	Caches    map[string][][]string
 
 	changed bool
@@ -49,21 +45,21 @@ func (d *Dot) Cache() map[string][][]string {
 func (d *Dot) Changed() bool { return d.changed }
 func (d *Dot) MarkChanged()  { d.changed = true }
 func (*Dot) Setup() []string { return nil }
-func (d *Dot) Name() string {
-	return strings.Repeat(".", d.NumRecurs+1)
-}
+func (d *Dot) Name() string  { return "." }
 
-func (d *Dot) directory() string {
-	path := make([]string, d.NumRecurs)
-	for i := 0; i < d.NumRecurs; i++ {
+func getDirectory(data *command.Data, extra ...string) string {
+	upTo := data.Int("up")
+	path := make([]string, upTo)
+	for i := 0; i < upTo; i++ {
 		path[i] = ".."
 	}
+	path = append(path, extra...)
 	return filepath.Join(path...)
 }
 
 func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 	if !data.Has(pathArg) {
-		return []string{fmt.Sprintf("cd %s", fp(d.directory()))}, nil
+		return []string{fmt.Sprintf("cd %s", fp(getDirectory(data)))}, nil
 	}
 
 	path := data.String(pathArg)
@@ -80,21 +76,26 @@ func fp(path string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(path, " ", "\\ "), "\\", "\\\\")
 }
 
+type relativeFetcher struct{}
+
+func (*relativeFetcher) Fetch(s string, data *command.Data) (*command.Completion, error) {
+	f := &command.FileFetcher[string]{
+		Directory:   getDirectory(data),
+		IgnoreFiles: true,
+	}
+	return f.Fetch(s, data)
+}
+
+type relativeTransformer struct {
+}
+
 func (d *Dot) Node() *command.Node {
 	opts := []command.ArgOpt[string]{
 		&command.Completor[string]{
-			Fetcher: &command.FileFetcher[string]{
-				Directory:   d.directory(),
-				IgnoreFiles: true,
-			},
+			Fetcher: &relativeFetcher{},
 		},
-		command.NewTransformer(func(v string) (string, error) {
-			var path []string
-			for i := 0; i < d.NumRecurs; i++ {
-				path = append(path, "..")
-			}
-			path = append(path, v)
-			a, err := filepath.Abs(filepath.Join(path...))
+		command.NewTransformer(func(v string, data *command.Data) (string, error) {
+			a, err := filepath.Abs(getDirectory(data, v))
 			if err != nil {
 				return "", fmt.Errorf("failed to transform file path: %v", err)
 			}
@@ -119,28 +120,25 @@ func (d *Dot) Node() *command.Node {
 		command.ExecutableNode(d.cd),
 	)
 
-	if d.NumRecurs == 0 {
-		// Only uses cache and Shortcuts with the single dot command.
-		return command.BranchNode(
-			map[string]*command.Node{
-				"-": command.SerialNodes(
-					command.Description("Go to the previous directory"),
-					command.SimpleExecutableNode("cd -"),
-				),
-			},
-			// TODO: prefer directory over shortcut
-			command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, n)),
-			command.DontCompleteSubcommands(),
-		)
-	}
+	//if d.NumRecurs == 0 {
+	// Only uses cache and Shortcuts with the single dot command.
+	return command.BranchNode(
+		map[string]*command.Node{
+			"-": command.SerialNodes(
+				command.Description("Go to the previous directory"),
+				command.SimpleExecutableNode("cd -"),
+			),
+		},
+		// TODO: prefer directory over shortcut
+		command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, n)),
+		command.DontCompleteSubcommands(),
+	)
+	//}
 	return n
 }
 
-func DotCLI(NumRecurs int) *Dot {
-	d := &Dot{
-		NumRecurs: NumRecurs,
-	}
-	return d
+func DotCLI() *Dot {
+	return &Dot{}
 }
 
 type subPathFetcher struct {
@@ -149,10 +147,7 @@ type subPathFetcher struct {
 
 func (spf *subPathFetcher) Fetch(sl []string, d *command.Data) (*command.Completion, error) {
 	base := filepath.Join(append(
-		[]string{
-			spf.d.directory(),
-			d.String(pathArg),
-		},
+		[]string{getDirectory(d, d.String(pathArg))},
 		// Remove last file/directory part from provided path
 		sl[:len(sl)-1]...,
 	)...)

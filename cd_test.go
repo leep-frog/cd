@@ -36,13 +36,9 @@ func TestLoad(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			nr := 3
-			d := DotCLI(nr)
+			d := DotCLI()
 			if err := json.Unmarshal([]byte(test.json), d); err != nil {
 				t.Fatalf("UnmarshalJSON(%v) should return nil; got %v", test.json, err)
-			}
-			if d.NumRecurs != nr {
-				t.Fatalf("UnmarshalJSON(%v) changed NumRecurs when shouldn't have", test.json)
 			}
 		})
 	}
@@ -76,10 +72,10 @@ func TestExecution(t *testing.T) {
 		{
 			name:     "handles nil arguments",
 			osStatFI: dirType,
-			d:        DotCLI(1),
+			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"cd .."},
+					Executable: []string{"cd "},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -91,7 +87,7 @@ func TestExecution(t *testing.T) {
 		{
 			name:     "handles basic dot",
 			osStatFI: dirType,
-			d:        DotCLI(0),
+			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd "},
@@ -106,13 +102,11 @@ func TestExecution(t *testing.T) {
 		{
 			name:     "handles empty arguments",
 			osStatFI: dirType,
-			d:        DotCLI(2),
+			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
 				Args: []string{},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{
-						fmt.Sprintf("cd %s", fp(filepath.Join("..", ".."))),
-					},
+					Executable: []string{"cd "},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -122,9 +116,32 @@ func TestExecution(t *testing.T) {
 			},
 		},
 		{
+			name:     "handles -u flag",
+			osStatFI: dirType,
+			d:        DotCLI(),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"-u", "2"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("cd %s", fp(filepath.Join("..", ".."))),
+					},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						"up": 2,
+					},
+				},
+			},
+			want: &Dot{
+				Caches: map[string][][]string{
+					cacheName: {{"-u", "2"}},
+				},
+			},
+		},
+		{
 			name:     "handles absolute path",
 			osStatFI: dirType,
-			d:        DotCLI(0),
+			d:        DotCLI(),
 			want: &Dot{
 				Caches: map[string][][]string{
 					cacheName: {{
@@ -148,9 +165,9 @@ func TestExecution(t *testing.T) {
 		{
 			name:     "cds into directory of a file",
 			osStatFI: fileType,
-			d:        DotCLI(3),
+			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
-				Args: []string{"something/somewhere.txt"},
+				Args: []string{"something/somewhere.txt", "--up", "3"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..", "something")))),
@@ -158,14 +175,22 @@ func TestExecution(t *testing.T) {
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					pathArg: filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
-					"up":    0,
+					"up":    3,
 				}},
+			},
+			want: &Dot{
+				Caches: map[string][][]string{
+					cacheName: {{
+						filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
+						"--up", "3",
+					}},
+				},
 			},
 		},
 		{
 			name:     "cds into directory with spaces",
 			osStatFI: dirType,
-			d:        DotCLI(0),
+			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"some where/"},
 				WantExecuteData: &command.ExecuteData{
@@ -189,7 +214,7 @@ func TestExecution(t *testing.T) {
 		{
 			name:     "0-dot cds down multiple paths",
 			osStatFI: dirType,
-			d:        DotCLI(0),
+			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"some", "thing", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
@@ -215,9 +240,9 @@ func TestExecution(t *testing.T) {
 		{
 			name:     "1-dot cds down multiple paths",
 			osStatFI: dirType,
-			d:        DotCLI(1),
+			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
-				Args: []string{"some", "thing", "some", "where"},
+				Args: []string{"some", "thing", "-u", "1", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "some", "thing", "some", "where")))),
@@ -226,13 +251,23 @@ func TestExecution(t *testing.T) {
 				WantData: &command.Data{Values: map[string]interface{}{
 					pathArg:    filepathAbs(t, filepath.Join("..", "some")),
 					subPathArg: []string{"thing", "some", "where"},
-					"up":       0,
+					"up":       1,
 				}},
+			},
+			want: &Dot{
+				Caches: map[string][][]string{
+					cacheName: {{
+						filepathAbs(t, filepath.Join("..", "some")),
+						"thing",
+						"-u", "1",
+						"some", "where",
+					}},
+				},
 			},
 		},
 		{
 			name: "0-dot goes to the previous directory",
-			d:    DotCLI(0),
+			d:    DotCLI(),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"-"},
 				WantExecuteData: &command.ExecuteData{
@@ -263,7 +298,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completes all directories",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Want: []string{
 					".git/",
 					"cmd/",
@@ -275,7 +310,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completes all directories with command",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd ",
 				Want: []string{
 					".git/",
@@ -288,14 +323,14 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot handles no match",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd uhh",
 			},
 		},
 		{
 			name: "dot completes directories that match",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd te",
 				Want: []string{
 					"testing/",
@@ -306,7 +341,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completes nested directories",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd testing/o",
 				Want: []string{
 					"testing/other/",
@@ -317,7 +352,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completes sub directories",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd testing ",
 				Want: []string{
 					"dir1/",
@@ -330,7 +365,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completes sub nested directories",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd testing dir1/",
 				Want: []string{
 					"another/",
@@ -343,7 +378,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completes partial sub nested directories",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd testing dir1/fold",
 				Want: []string{
 					"dir1/folder",
@@ -354,7 +389,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completes partial sub directories",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd testing d",
 				Want: []string{
 					"dir",
@@ -365,7 +400,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completes partial sub directories",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd testing d",
 				Want: []string{
 					"dir",
@@ -376,7 +411,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "dot completion handles no match for sub directories",
 			ctc: &command.CompleteTestCase{
-				Node: DotCLI(0).Node(),
+				Node: DotCLI().Node(),
 				Args: "cmd testing um",
 			},
 		},
@@ -389,18 +424,15 @@ func TestAutocomplete(t *testing.T) {
 }
 
 func TestMetadata(t *testing.T) {
-	d := DotCLI(4)
-
-	wantName := "....."
-	if got := d.Name(); got != wantName {
+	wantName := "."
+	if got := DotCLI().Name(); got != wantName {
 		t.Errorf("Name() returned %q; want %q", got, wantName)
 	}
 }
 
 func TestUsage(t *testing.T) {
-	// Test with single dot
 	command.UsageTest(t, &command.UsageTestCase{
-		Node: DotCLI(0).Node(),
+		Node: DotCLI().Node(),
 		WantString: []string{
 			"Changes directories",
 			"< ^ * [ PATH ] [ SUB_PATH ... ] --up|-u",
@@ -419,22 +451,6 @@ func TestUsage(t *testing.T) {
 			command.ShortcutDesc,
 			command.BranchDesc,
 			command.CacheDesc,
-		},
-	})
-
-	// Test with multiple dots
-	command.UsageTest(t, &command.UsageTestCase{
-		Node: DotCLI(1).Node(),
-		WantString: []string{
-			"Changes directories",
-			"[ PATH ] [ SUB_PATH ... ] --up|-u",
-			"",
-			"Arguments:",
-			"  PATH: destination directory",
-			"  SUB_PATH: subdirectories to continue to",
-			"",
-			"Flags:",
-			"  [u] up: Number of directories to go up when cd-ing",
 		},
 	})
 }
