@@ -140,7 +140,7 @@ func DotCLI() *Dot {
 // DotAliaser returns an aliaser option that searches `n` directories up with
 // an alias of n `.` characters.
 func DotAliaser(n int) sourcerer.Option {
-	return sourcerer.Aliaser(strings.Repeat(".", n), fmt.Sprintf(". -u %d", n))
+	return sourcerer.Aliaser(strings.Repeat(".", n), fmt.Sprintf(". -u %d", n-1))
 }
 
 type subPathFetcher struct {
