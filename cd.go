@@ -143,6 +143,15 @@ func DotAliaser(n int) sourcerer.Option {
 	return sourcerer.Aliaser(strings.Repeat(".", n), fmt.Sprintf(". -u %d", n-1))
 }
 
+// DotAliasersUpTo returns `DotAliaser` options from 2 to `n`.
+func DotAliasersUpTo(n int) sourcerer.Option {
+	m := map[string][]string{}
+	for i := 2; i <= n; i++ {
+		m[strings.Repeat(".", i)] = []string{".", "-u", fmt.Sprintf("%d", i-1)}
+	}
+	return sourcerer.Aliasers(m)
+}
+
 type subPathFetcher struct {
 	d *Dot
 }
