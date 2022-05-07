@@ -2,7 +2,7 @@ module github.com/leep-frog/cd
 
 go 1.18
 
-require github.com/leep-frog/command v0.0.0-20220506135200-e025de9d65b5
+require github.com/leep-frog/command v0.0.0-20220507010837-77301527602e
 
 require (
 	github.com/google/go-cmp v0.5.5 // indirect

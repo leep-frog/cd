@@ -77,14 +77,14 @@ func fp(path string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(path, " ", "\\ "), "\\", "\\\\")
 }
 
-type relativeFetcher struct{}
-
-func (*relativeFetcher) Fetch(s string, data *command.Data) (*command.Completion, error) {
-	f := &command.FileFetcher[string]{
-		Directory:   getDirectory(data),
-		IgnoreFiles: true,
-	}
-	return f.Fetch(s, data)
+func relativeFetcher() command.Completor[string] {
+	return command.CompletorFromFunc[string](func(s string, data *command.Data) (*command.Completion, error) {
+		f := &command.FileCompletor[string]{
+			Directory:   getDirectory(data),
+			IgnoreFiles: true,
+		}
+		return f.Complete(s, data)
+	})
 }
 
 type relativeTransformer struct {
@@ -92,9 +92,7 @@ type relativeTransformer struct {
 
 func (d *Dot) Node() *command.Node {
 	opts := []command.ArgOpt[string]{
-		&command.Completor[string]{
-			Fetcher: &relativeFetcher{},
-		},
+		relativeFetcher(),
 		command.NewTransformer(func(v string, data *command.Data) (string, error) {
 			a, err := filepath.Abs(getDirectory(data, v))
 			if err != nil {
@@ -105,11 +103,7 @@ func (d *Dot) Node() *command.Node {
 		}, false),
 	}
 
-	subOpts := []command.ArgOpt[[]string]{
-		&command.Completor[[]string]{
-			Fetcher: &subPathFetcher{d},
-		},
-	}
+	subOpts := []command.ArgOpt[[]string]{subPathFetcher()}
 
 	dfltNode := command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
 		command.Description("Changes directories"),
@@ -152,20 +146,18 @@ func DotAliasersUpTo(n int) sourcerer.Option {
 	return sourcerer.Aliasers(m)
 }
 
-type subPathFetcher struct {
-	d *Dot
-}
+func subPathFetcher() command.Completor[[]string] {
+	return command.CompletorFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+		base := filepath.Join(append(
+			[]string{getDirectory(d, d.String(pathArg))},
+			// Remove last file/directory part from provided path
+			sl[:len(sl)-1]...,
+		)...)
 
-func (spf *subPathFetcher) Fetch(sl []string, d *command.Data) (*command.Completion, error) {
-	base := filepath.Join(append(
-		[]string{getDirectory(d, d.String(pathArg))},
-		// Remove last file/directory part from provided path
-		sl[:len(sl)-1]...,
-	)...)
-
-	ff := &command.FileFetcher[[]string]{
-		Directory:   base,
-		IgnoreFiles: true,
-	}
-	return ff.Fetch(sl, d)
+		ff := &command.FileCompletor[[]string]{
+			Directory:   base,
+			IgnoreFiles: true,
+		}
+		return ff.Complete(sl, d)
+	})
 }
