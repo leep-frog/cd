@@ -279,9 +279,7 @@ func TestExecution(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			oldStat := osStat
-			osStat = func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr }
-			defer func() { osStat = oldStat }()
+			command.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
 
 			test.etc.Node = test.d.Node()
 			command.ExecuteTest(t, test.etc)

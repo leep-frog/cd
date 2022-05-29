@@ -78,7 +78,7 @@ func fp(path string) string {
 }
 
 func relativeFetcher() command.Completor[string] {
-	return command.CompletorFromFunc[string](func(s string, data *command.Data) (*command.Completion, error) {
+	return command.CompletorFromFunc(func(s string, data *command.Data) (*command.Completion, error) {
 		f := &command.FileCompletor[string]{
 			Directory:   getDirectory(data),
 			IgnoreFiles: true,

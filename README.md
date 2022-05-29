@@ -16,6 +16,7 @@ aliaser gc . $GOPATH/cmd
 # etc.
 
 # Helpful recursive CLIs
+# Also available as sourcerer.Option in go with `cd.DotAliaser(2)`
 aliaser .. . -u 1
 aliaser ... . -u 2
 aliaser .... . -u 3
