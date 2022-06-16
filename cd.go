@@ -93,6 +93,7 @@ type relativeTransformer struct {
 func (d *Dot) Node() *command.Node {
 	opts := []command.ArgOpt[string]{
 		relativeFetcher(),
+		command.CompleteForExecute[string](command.CompleteForExecuteBestEffort()),
 		command.NewTransformer(func(v string, data *command.Data) (string, error) {
 			a, err := filepath.Abs(getDirectory(data, v))
 			if err != nil {
@@ -103,7 +104,10 @@ func (d *Dot) Node() *command.Node {
 		}, false),
 	}
 
-	subOpts := []command.ArgOpt[[]string]{subPathFetcher()}
+	subOpts := []command.ArgOpt[[]string]{
+		command.CompleteForExecute[[]string](command.CompleteForExecuteBestEffort()),
+		subPathFetcher(),
+	}
 
 	dfltNode := command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
 		command.Description("Changes directories"),
