@@ -36,6 +36,8 @@ github.com/leep-frog/command v0.0.0-20220616160427-45f54a9e37dc h1:e5yGVKnwj5yZ0
 github.com/leep-frog/command v0.0.0-20220616160427-45f54a9e37dc/go.mod h1:Rd1Wj9R6mxmO2cPMosUt72SwGFr68HOdykDbwVMwWE4=
 github.com/leep-frog/command v0.0.0-20220702141349-b91d0d4e5921 h1:dat98v80eQ6jZ55m3Kdnv68hO7b6yedhDmZcmEM9REI=
 github.com/leep-frog/command v0.0.0-20220702141349-b91d0d4e5921/go.mod h1:Rd1Wj9R6mxmO2cPMosUt72SwGFr68HOdykDbwVMwWE4=
+github.com/leep-frog/command v0.0.0-20220702192851-9c83a81e230f h1:JxAaReaLN0dOS+tpO7VAc1LPpC1ejXAHM1kZgckOKps=
+github.com/leep-frog/command v0.0.0-20220702192851-9c83a81e230f/go.mod h1:Rd1Wj9R6mxmO2cPMosUt72SwGFr68HOdykDbwVMwWE4=
 golang.org/x/exp v0.0.0-20220321124402-2d6d886f8a82 h1:P3h2IfqHFILVjDaCKXyuKMprdEyIbrbKevbf2EB6lQI=
 golang.org/x/exp v0.0.0-20220321124402-2d6d886f8a82/go.mod h1:lgLbSvA5ygNOMpwM/9anMpWVlVJ7Z+cHWq/eFuinpGE=
 golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57 h1:LQmS1nU0twXLA96Kt7U9qtHJEbBk3z6Q0V4UXjZkpr4=
