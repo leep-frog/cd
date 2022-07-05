@@ -85,6 +85,28 @@ func TestExecution(t *testing.T) {
 			},
 		},
 		{
+			name:     "complete for execute",
+			osStatFI: dirType,
+			d:        DotCLI(),
+			want: &Dot{
+				Caches: map[string][][]string{
+					cacheName: {{filepathAbs(t, "cmd")}},
+				},
+			},
+			etc: &command.ExecuteTestCase{
+				Args: []string{"c"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{fmt.Sprintf("cd %s", fp(filepathAbs(t, "cmd")))},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						"up":   0,
+						"PATH": filepathAbs(t, "cmd"),
+					},
+				},
+			},
+		},
+		{
 			name:     "handles basic dot",
 			osStatFI: dirType,
 			d:        DotCLI(),
@@ -277,6 +299,7 @@ func TestExecution(t *testing.T) {
 				},
 			},
 		},
+		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			command.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
