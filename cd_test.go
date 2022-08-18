@@ -138,6 +138,30 @@ func TestExecution(t *testing.T) {
 			},
 		},
 		{
+			name:     "handles directory with spaces arguments",
+			osStatFI: dirType,
+			d:        DotCLI(),
+			etc: &command.ExecuteTestCase{
+				Args: []string{"some thing"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("cd %q", fp(filepathAbs(t, "some thing"))),
+					},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						pathArg: filepathAbs(t, "some thing"),
+						"up":    0,
+					},
+				},
+			},
+			want: &Dot{
+				Caches: map[string][][]string{
+					cacheName: {{filepathAbs(t, "some thing")}},
+				},
+			},
+		},
+		{
 			name:     "handles -u flag",
 			osStatFI: dirType,
 			d:        DotCLI(),

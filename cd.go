@@ -114,6 +114,7 @@ func (d *Dot) Node() *command.Node {
 
 	dfltNode := command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
 		command.Description("Changes directories"),
+		command.EchoExecuteData(),
 		command.NewFlagNode(
 			command.NewFlag[int]("up", 'u', "Number of directories to go up when cd-ing", command.Default(0), command.NonNegative[int]()),
 		),
