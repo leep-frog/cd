@@ -8,9 +8,9 @@ import (
 )
 
 func main() {
-	var clis []sourcerer.CLI
-	for i := 0; i < 10; i++ {
-		clis = append(clis, cd.DotCLI(i))
-	}
-	os.Exit(sourcerer.Source(clis...))
+	os.Exit(sourcerer.Source(
+		[]sourcerer.CLI{cd.DotCLI()},
+		cd.MinusAliaser(),
+		cd.DotAliasersUpTo(10),
+	))
 }
