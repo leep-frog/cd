@@ -76,8 +76,9 @@ func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 }
 
 func fp(path string) string {
+	return path
 	// Needed for use in msys2 mingw.
-	return strings.ReplaceAll(strings.ReplaceAll(path, " ", "\\ "), "\\", "\\\\")
+	//return strings.ReplaceAll(strings.ReplaceAll(path, " ", "\\ "), "\\", "\\\\")
 }
 
 func relativeFetcher() command.Completor[string] {
