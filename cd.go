@@ -60,7 +60,7 @@ func getDirectory(data *command.Data, extra ...string) string {
 
 func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 	if !data.Has(pathArg) {
-		if dir := fp(getDirectory(data)); dir != "" {
+		if dir := getDirectory(data); dir != "" {
 			return []string{fmt.Sprintf("cd %q", dir)}, nil
 		}
 		return []string{"cd"}, nil
@@ -72,13 +72,7 @@ func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 	}
 
 	subPaths := append([]string{path}, data.StringList(subPathArg)...)
-	return []string{fmt.Sprintf("cd %q", fp(filepath.Join(subPaths...)))}, nil
-}
-
-func fp(path string) string {
-	return path
-	// Needed for use in msys2 mingw.
-	//return strings.ReplaceAll(strings.ReplaceAll(path, " ", "\\ "), "\\", "\\\\")
+	return []string{fmt.Sprintf("cd %q", filepath.Join(subPaths...))}, nil
 }
 
 func relativeFetcher() command.Completor[string] {
