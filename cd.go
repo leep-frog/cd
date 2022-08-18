@@ -60,7 +60,10 @@ func getDirectory(data *command.Data, extra ...string) string {
 
 func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 	if !data.Has(pathArg) {
-		return []string{fmt.Sprintf("cd %s", fp(getDirectory(data)))}, nil
+		if dir := fp(getDirectory(data)); dir != "" {
+			return []string{fmt.Sprintf("cd %q", dir)}, nil
+		}
+		return []string{"cd"}, nil
 	}
 
 	path := data.String(pathArg)
@@ -69,7 +72,7 @@ func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 	}
 
 	subPaths := append([]string{path}, data.StringList(subPathArg)...)
-	return []string{fmt.Sprintf("cd %s", fp(filepath.Join(subPaths...)))}, nil
+	return []string{fmt.Sprintf("cd %q", fp(filepath.Join(subPaths...)))}, nil
 }
 
 func fp(path string) string {

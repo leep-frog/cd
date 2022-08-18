@@ -75,7 +75,7 @@ func TestExecution(t *testing.T) {
 			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"cd "},
+					Executable: []string{"cd"},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -96,7 +96,7 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{"c"},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{fmt.Sprintf("cd %s", fp(filepathAbs(t, "cmd")))},
+					Executable: []string{fmt.Sprintf("cd %q", fp(filepathAbs(t, "cmd")))},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -112,7 +112,7 @@ func TestExecution(t *testing.T) {
 			d:        DotCLI(),
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"cd "},
+					Executable: []string{"cd"},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -128,7 +128,7 @@ func TestExecution(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"cd "},
+					Executable: []string{"cd"},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
@@ -145,7 +145,7 @@ func TestExecution(t *testing.T) {
 				Args: []string{"-u", "2"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", fp(filepath.Join("..", ".."))),
+						fmt.Sprintf("cd %q", fp(filepath.Join("..", ".."))),
 					},
 				},
 				WantData: &command.Data{
@@ -175,7 +175,7 @@ func TestExecution(t *testing.T) {
 				Args: []string{filepathAbs(t, "../../..")},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..")))),
+						fmt.Sprintf("cd %q", fp(filepathAbs(t, filepath.Join("..", "..", "..")))),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -192,7 +192,7 @@ func TestExecution(t *testing.T) {
 				Args: []string{"something/somewhere.txt", "--up", "3"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "..", "..", "something")))),
+						fmt.Sprintf("cd %q", fp(filepathAbs(t, filepath.Join("..", "..", "..", "something")))),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -217,7 +217,7 @@ func TestExecution(t *testing.T) {
 				Args: []string{"some where/"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("some where")))),
+						fmt.Sprintf("cd %q", fp(filepathAbs(t, filepath.Join("some where")))),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -241,7 +241,7 @@ func TestExecution(t *testing.T) {
 				Args: []string{"some", "thing", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("some", "thing", "some", "where")))),
+						fmt.Sprintf("cd %q", fp(filepathAbs(t, filepath.Join("some", "thing", "some", "where")))),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -267,7 +267,7 @@ func TestExecution(t *testing.T) {
 				Args: []string{"some", "thing", "-u", "1", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %s", fp(filepathAbs(t, filepath.Join("..", "some", "thing", "some", "where")))),
+						fmt.Sprintf("cd %q", fp(filepathAbs(t, filepath.Join("..", "some", "thing", "some", "where")))),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
