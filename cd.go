@@ -136,13 +136,13 @@ func DotCLI() *Dot {
 
 // MinusAliaser returns an alias for ". -"
 func MinusAliaser() sourcerer.Option {
-	return sourcerer.Aliaser("-", ".", "-")
+	return sourcerer.NewAliaser("-", ".", "-")
 }
 
 // DotAliaser returns an aliaser option that searches `n` directories up with
 // an alias of n `.` characters.
 func DotAliaser(n int) sourcerer.Option {
-	return sourcerer.Aliaser(strings.Repeat(".", n), fmt.Sprintf(". -u %d", n-1))
+	return sourcerer.NewAliaser(strings.Repeat(".", n), fmt.Sprintf(". -u %d", n-1))
 }
 
 // DotAliasersUpTo returns `DotAliaser` options from 2 to `n`.
