@@ -75,9 +75,9 @@ func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 	return []string{fmt.Sprintf("cd %q", filepath.Join(subPaths...))}, nil
 }
 
-func relativeFetcher() command.Completor[string] {
-	return command.CompletorFromFunc(func(s string, data *command.Data) (*command.Completion, error) {
-		f := &command.FileCompletor[string]{
+func relativeFetcher() command.Completer[string] {
+	return command.CompleterFromFunc(func(s string, data *command.Data) (*command.Completion, error) {
+		f := &command.FileCompleter[string]{
 			Directory:   getDirectory(data),
 			IgnoreFiles: true,
 		}
@@ -154,15 +154,15 @@ func DotAliasersUpTo(n int) sourcerer.Option {
 	return sourcerer.Aliasers(m)
 }
 
-func subPathFetcher() command.Completor[[]string] {
-	return command.CompletorFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+func subPathFetcher() command.Completer[[]string] {
+	return command.CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 		base := filepath.Join(append(
 			[]string{getDirectory(d, d.String(pathArg))},
 			// Remove last file/directory part from provided path
 			sl[:len(sl)-1]...,
 		)...)
 
-		ff := &command.FileCompletor[[]string]{
+		ff := &command.FileCompleter[[]string]{
 			Directory:   base,
 			IgnoreFiles: true,
 		}
