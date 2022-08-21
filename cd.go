@@ -14,7 +14,6 @@ const (
 	pathArg         = "PATH"
 	subPathArg      = "SUB_PATH"
 	dirShortcutName = "dirShortcuts"
-	cacheName       = "dotCache"
 )
 
 var (
@@ -24,7 +23,6 @@ var (
 type Dot struct {
 	// Shortcuts is a map from shortcut type to shortcuts to absolute directory path.
 	Shortcuts map[string]map[string][]string
-	Caches    map[string][][]string
 
 	changed bool
 }
@@ -34,13 +32,6 @@ func (d *Dot) ShortcutMap() map[string]map[string][]string {
 		d.Shortcuts = map[string]map[string][]string{}
 	}
 	return d.Shortcuts
-}
-
-func (d *Dot) Cache() map[string][][]string {
-	if d.Caches == nil {
-		d.Caches = map[string][][]string{}
-	}
-	return d.Caches
 }
 
 func (d *Dot) Changed() bool { return d.changed }
@@ -93,12 +84,7 @@ func (d *Dot) Node() *command.Node {
 		relativeFetcher(),
 		command.CompleteForExecute[string](command.CompleteForExecuteBestEffort()),
 		command.NewTransformer(func(v string, data *command.Data) (string, error) {
-			a, err := filepath.Abs(getDirectory(data, v))
-			if err != nil {
-				return "", fmt.Errorf("failed to transform file path: %v", err)
-			}
-
-			return a, nil
+			return filepath.Abs(getDirectory(data, v))
 		}),
 	}
 
@@ -107,7 +93,7 @@ func (d *Dot) Node() *command.Node {
 		subPathFetcher(),
 	}
 
-	dfltNode := command.CacheNode(cacheName, d, command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
+	dfltNode := command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
 		command.Description("Changes directories"),
 		command.EchoExecuteData(),
 		command.NewFlagNode(
@@ -116,7 +102,7 @@ func (d *Dot) Node() *command.Node {
 		command.OptionalArg(pathArg, "destination directory", opts...),
 		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
 		command.ExecutableNode(d.cd),
-	)))
+	))
 
 	return command.BranchNode(
 		map[string]*command.Node{

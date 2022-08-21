@@ -88,11 +88,6 @@ func TestExecution(t *testing.T) {
 			name:     "complete for execute",
 			osStatFI: dirType,
 			d:        DotCLI(),
-			want: &Dot{
-				Caches: map[string][][]string{
-					cacheName: {{filepathAbs(t, "cmd")}},
-				},
-			},
 			etc: &command.ExecuteTestCase{
 				Args: []string{"c"},
 				WantExecuteData: &command.ExecuteData{
@@ -155,11 +150,6 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			want: &Dot{
-				Caches: map[string][][]string{
-					cacheName: {{filepathAbs(t, "some thing")}},
-				},
-			},
 		},
 		{
 			name:     "handles -u flag",
@@ -178,23 +168,11 @@ func TestExecution(t *testing.T) {
 					},
 				},
 			},
-			want: &Dot{
-				Caches: map[string][][]string{
-					cacheName: {{"-u", "2"}},
-				},
-			},
 		},
 		{
 			name:     "handles absolute path",
 			osStatFI: dirType,
 			d:        DotCLI(),
-			want: &Dot{
-				Caches: map[string][][]string{
-					cacheName: {{
-						filepathAbs(t, filepath.Join("..", "..", "..")),
-					}},
-				},
-			},
 			etc: &command.ExecuteTestCase{
 				Args: []string{filepathAbs(t, "../../..")},
 				WantExecuteData: &command.ExecuteData{
@@ -224,14 +202,6 @@ func TestExecution(t *testing.T) {
 					"up":    3,
 				}},
 			},
-			want: &Dot{
-				Caches: map[string][][]string{
-					cacheName: {{
-						filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
-						"--up", "3",
-					}},
-				},
-			},
 		},
 		{
 			name:     "cds into directory with spaces",
@@ -248,13 +218,6 @@ func TestExecution(t *testing.T) {
 					pathArg: filepathAbs(t, filepath.Join("some where")),
 					"up":    0,
 				}},
-			},
-			want: &Dot{
-				Caches: map[string][][]string{
-					cacheName: {{
-						filepathAbs(t, filepath.Join("some where")),
-					}},
-				},
 			},
 		},
 		{
@@ -274,14 +237,6 @@ func TestExecution(t *testing.T) {
 					"up":       0,
 				}},
 			},
-			want: &Dot{
-				Caches: map[string][][]string{
-					cacheName: {{
-						filepathAbs(t, filepath.Join("some")),
-						"thing", "some", "where",
-					}},
-				},
-			},
 		},
 		{
 			name:     "1-dot cds down multiple paths",
@@ -299,16 +254,6 @@ func TestExecution(t *testing.T) {
 					subPathArg: []string{"thing", "some", "where"},
 					"up":       1,
 				}},
-			},
-			want: &Dot{
-				Caches: map[string][][]string{
-					cacheName: {{
-						filepathAbs(t, filepath.Join("..", "some")),
-						"thing",
-						"-u", "1",
-						"some", "where",
-					}},
-				},
 			},
 		},
 		{
@@ -480,7 +425,7 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI().Node(),
 		WantString: []string{
 			"Changes directories",
-			"< ^ * [ PATH ] [ SUB_PATH ... ] --up|-u",
+			"< * [ PATH ] [ SUB_PATH ... ] --up|-u",
 			"",
 			"  Go to the previous directory",
 			"  -",
@@ -495,7 +440,6 @@ func TestUsage(t *testing.T) {
 			"Symbols:",
 			command.ShortcutDesc,
 			command.BranchDesc,
-			command.CacheDesc,
 		},
 	})
 }
