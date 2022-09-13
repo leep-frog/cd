@@ -83,9 +83,9 @@ func (d *Dot) Node() *command.Node {
 	opts := []command.ArgOpt[string]{
 		relativeFetcher(),
 		command.CompleteForExecute[string](command.CompleteForExecuteBestEffort()),
-		command.NewTransformer(func(v string, data *command.Data) (string, error) {
+		&command.Transformer[string]{F: func(v string, data *command.Data) (string, error) {
 			return filepath.Abs(getDirectory(data, v))
-		}),
+		}},
 	}
 
 	subOpts := []command.ArgOpt[[]string]{
@@ -96,24 +96,24 @@ func (d *Dot) Node() *command.Node {
 	dfltNode := command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
 		command.Description("Changes directories"),
 		command.EchoExecuteData(),
-		command.NewFlagNode(
-			command.NewFlag[int]("up", 'u', "Number of directories to go up when cd-ing", command.Default(0), command.NonNegative[int]()),
+		command.FlagNode(
+			command.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", command.Default(0), command.NonNegative[int]()),
 		),
 		command.OptionalArg(pathArg, "destination directory", opts...),
 		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
 		command.ExecutableNode(d.cd),
 	))
 
-	return command.BranchNode(
-		map[string]*command.Node{
+	return command.AsNode(&command.BranchNode{
+		Branches: map[string]*command.Node{
 			"-": command.SerialNodes(
 				command.Description("Go to the previous directory"),
 				command.SimpleExecutableNode("cd -"),
 			),
 		},
-		dfltNode,
-		command.DontCompleteSubcommands(),
-	)
+		Default:           dfltNode,
+		DefaultCompletion: true,
+	})
 }
 
 func DotCLI() *Dot {
