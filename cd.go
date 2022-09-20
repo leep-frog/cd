@@ -53,10 +53,6 @@ func getDirectory(data *command.Data, extra ...string) string {
 	return filepath.Join(path...)
 }
 
-func (d *Dot) setHistory(c *cache.Cache, h *History) error {
-	return c.PutStruct(shellCacheKey, h)
-}
-
 var (
 	newShell = cache.NewShell
 )
@@ -83,13 +79,30 @@ func (d *Dot) updateHistory(output command.Output, data *command.Data) error {
 	}
 
 	// Update the cache data
-	h.PrevDir = command.GetwdFromData(data)
-
-	return output.Annotatef(d.setHistory(c, h), "failed to put struct data")
+	return output.Err(h.append(c, data))
 }
 
 type History struct {
-	PrevDir string
+	PrevDirs []string
+}
+
+func (h *History) append(c *cache.Cache, data *command.Data) error {
+	dir := command.GetwdFromData(data)
+
+	// No need to update if previous directory is the same.
+	if len(h.PrevDirs) > 0 && h.PrevDirs[len(h.PrevDirs)-1] == dir {
+		return nil
+	}
+
+	// Otherwise append, truncate, and save.
+	h.PrevDirs = append(h.PrevDirs, dir)
+	if len(h.PrevDirs) > 2 {
+		h.PrevDirs = h.PrevDirs[len(h.PrevDirs)-2:]
+	}
+	if err := c.PutStruct(shellCacheKey, h); err != nil {
+		return fmt.Errorf("failed to save history: %v", err)
+	}
+	return nil
 }
 
 func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
@@ -159,12 +172,17 @@ func (d *Dot) Node() *command.Node {
 					if err != nil {
 						return nil, output.Err(err)
 					}
-					cmd := fmt.Sprintf("cd %q", h.PrevDir)
-					if h.PrevDir == "" {
-						cmd = "cd"
+					wd := command.GetwdFromData(data)
+					pd := wd
+					for i := len(h.PrevDirs) - 1; pd == wd && i >= 0; i-- {
+						pd = h.PrevDirs[i]
 					}
-					h.PrevDir = command.GetwdFromData(data)
-					return []string{cmd}, output.Err(d.setHistory(c, h))
+					cmd := "cd"
+					if pd != wd {
+						cmd = fmt.Sprintf("cd %q", pd)
+					}
+
+					return []string{cmd}, output.Err(h.append(c, data))
 				}),
 			),
 		},
