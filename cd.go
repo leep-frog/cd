@@ -164,6 +164,18 @@ func (d *Dot) Node() *command.Node {
 
 	return command.AsNode(&command.BranchNode{
 		Branches: map[string]*command.Node{
+			"hist": command.SerialNodes(
+				&command.ExecutorProcessor{F: func(o command.Output, data *command.Data) error {
+					c, h, err := d.getHistory()
+					if err != nil {
+						return o.Err(err)
+					}
+					o.Stdoutln("WD: ", command.GetwdFromData(data))
+					o.Stdoutln("HISTORY: ", h)
+					o.Stdoutln("CACHE: ", c.Dir, c)
+					return nil
+				}},
+			),
 			"-": command.SerialNodes(
 				command.Description("Go to the previous directory"),
 				command.Getwd(),
