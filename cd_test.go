@@ -8,8 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/cache"
 )
 
 func filepathAbs(t *testing.T, path string) string {
@@ -60,34 +62,87 @@ var (
 	dirType  = &fakeFileInfo{true}
 )
 
-func TestExecution(t *testing.T) {
+func TestExecute(t *testing.T) {
+	wd := "current/dir"
+	wdHist := &History{wd}
+
 	for _, test := range []struct {
-		name      string
-		d         *Dot
-		want      *Dot
-		etc       *command.ExecuteTestCase
-		osStatFI  os.FileInfo
-		osStatErr error
+		name               string
+		d                  *Dot
+		want               *Dot
+		etc                *command.ExecuteTestCase
+		osStatFI           os.FileInfo
+		osStatErr          error
+		newShellErr        error
+		shellCache         *cache.Cache
+		ignoreHistoryCheck bool
+		wantHistory        *History
 	}{
 		{
-			name:     "handles nil arguments",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "handles nil arguments",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd"},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						"up": 0,
+						upFlag.Name():    0,
+						command.GetwdKey: wd,
 					},
 				},
 			},
 		},
 		{
-			name:     "complete for execute",
+			name:        "error if fails to get new shell",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			newShellErr: fmt.Errorf("oops"),
+			wantHistory: &History{},
+			etc: &command.ExecuteTestCase{
+				WantErr:    fmt.Errorf("failed to get shell cache: oops"),
+				WantStderr: "failed to get shell cache: oops\n",
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{"cd"},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						upFlag.Name():    0,
+						command.GetwdKey: wd,
+					},
+				},
+			},
+		},
+		{
+			name:     "error if GetStruct error",
 			osStatFI: dirType,
 			d:        DotCLI(),
+			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+				shellCacheKey: "} invalid json {",
+			}),
+			ignoreHistoryCheck: true,
+			wantHistory:        &History{},
+			etc: &command.ExecuteTestCase{
+				WantErr:    fmt.Errorf("failed to get struct data: failed to unmarshal cache data: invalid character '}' looking for beginning of value"),
+				WantStderr: "failed to get struct data: failed to unmarshal cache data: invalid character '}' looking for beginning of value\n",
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{"cd"},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						upFlag.Name():    0,
+						command.GetwdKey: wd,
+					},
+				},
+			},
+		},
+		{
+			name:        "complete for execute",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{"c"},
 				WantExecuteData: &command.ExecuteData{
@@ -95,31 +150,35 @@ func TestExecution(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						"up":   0,
-						"PATH": filepathAbs(t, "cmd"),
+						upFlag.Name():    0,
+						"PATH":           filepathAbs(t, "cmd"),
+						command.GetwdKey: wd,
 					},
 				},
 			},
 		},
 		{
-			name:     "handles basic dot",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "handles basic dot",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd"},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						"up": 0,
+						upFlag.Name():    0,
+						command.GetwdKey: wd,
 					},
 				},
 			},
 		},
 		{
-			name:     "handles empty arguments",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "handles empty arguments",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{},
 				WantExecuteData: &command.ExecuteData{
@@ -127,15 +186,17 @@ func TestExecution(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						"up": 0,
+						upFlag.Name():    0,
+						command.GetwdKey: wd,
 					},
 				},
 			},
 		},
 		{
-			name:     "handles directory with spaces arguments",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "handles directory with spaces arguments",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{"some thing"},
 				WantExecuteData: &command.ExecuteData{
@@ -145,16 +206,18 @@ func TestExecution(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						pathArg: filepathAbs(t, "some thing"),
-						"up":    0,
+						pathArg:          filepathAbs(t, "some thing"),
+						upFlag.Name():    0,
+						command.GetwdKey: wd,
 					},
 				},
 			},
 		},
 		{
-			name:     "handles -u flag",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "handles -u flag",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{"-u", "2"},
 				WantExecuteData: &command.ExecuteData{
@@ -164,15 +227,17 @@ func TestExecution(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						"up": 2,
+						upFlag.Name():    2,
+						command.GetwdKey: wd,
 					},
 				},
 			},
 		},
 		{
-			name:     "handles absolute path",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "handles absolute path",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{filepathAbs(t, "../../..")},
 				WantExecuteData: &command.ExecuteData{
@@ -181,15 +246,17 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg: filepathAbs(t, filepath.Join("..", "..", "..")),
-					"up":    0,
+					pathArg:          filepathAbs(t, filepath.Join("..", "..", "..")),
+					upFlag.Name():    0,
+					command.GetwdKey: wd,
 				}},
 			},
 		},
 		{
-			name:     "cds into directory of a file",
-			osStatFI: fileType,
-			d:        DotCLI(),
+			name:        "cds into directory of a file",
+			osStatFI:    fileType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{"something/somewhere.txt", "--up", "3"},
 				WantExecuteData: &command.ExecuteData{
@@ -198,15 +265,17 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg: filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
-					"up":    3,
+					pathArg:          filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
+					upFlag.Name():    3,
+					command.GetwdKey: wd,
 				}},
 			},
 		},
 		{
-			name:     "cds into directory with spaces",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "cds into directory with spaces",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{"some where/"},
 				WantExecuteData: &command.ExecuteData{
@@ -215,15 +284,17 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg: filepathAbs(t, filepath.Join("some where")),
-					"up":    0,
+					pathArg:          filepathAbs(t, filepath.Join("some where")),
+					upFlag.Name():    0,
+					command.GetwdKey: wd,
 				}},
 			},
 		},
 		{
-			name:     "0-dot cds down multiple paths",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "0-dot cds down multiple paths",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{"some", "thing", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
@@ -232,16 +303,18 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:    filepathAbs(t, filepath.Join("some")),
-					subPathArg: []string{"thing", "some", "where"},
-					"up":       0,
+					pathArg:          filepathAbs(t, filepath.Join("some")),
+					subPathArg:       []string{"thing", "some", "where"},
+					upFlag.Name():    0,
+					command.GetwdKey: wd,
 				}},
 			},
 		},
 		{
-			name:     "1-dot cds down multiple paths",
-			osStatFI: dirType,
-			d:        DotCLI(),
+			name:        "1-dot cds down multiple paths",
+			osStatFI:    dirType,
+			d:           DotCLI(),
+			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
 				Args: []string{"some", "thing", "-u", "1", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
@@ -250,32 +323,90 @@ func TestExecution(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:    filepathAbs(t, filepath.Join("..", "some")),
-					subPathArg: []string{"thing", "some", "where"},
-					"up":       1,
+					pathArg:          filepathAbs(t, filepath.Join("..", "some")),
+					subPathArg:       []string{"thing", "some", "where"},
+					upFlag.Name():    1,
+					command.GetwdKey: wd,
 				}},
 			},
 		},
 		{
-			name: "0-dot goes to the previous directory",
-			d:    DotCLI(),
+			name:        "minus goes to the previous directory",
+			d:           DotCLI(),
+			wantHistory: wdHist,
+			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+				shellCacheKey: &History{
+					PrevDir: "old/dir",
+				},
+			}),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"-"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						"cd -",
+						`cd "old/dir"`,
 					},
 				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					command.GetwdKey: wd,
+				}},
+			},
+		},
+		{
+			name:        "minus goes home if no history",
+			d:           DotCLI(),
+			wantHistory: wdHist,
+			etc: &command.ExecuteTestCase{
+				Args: []string{"-"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						`cd`,
+					},
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					command.GetwdKey: wd,
+				}},
+			},
+		},
+		{
+			name:        "minus fails if can't get newShell",
+			d:           DotCLI(),
+			wantHistory: &History{},
+			newShellErr: fmt.Errorf("argh"),
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"-"},
+				WantErr:    fmt.Errorf("failed to get shell cache: argh"),
+				WantStderr: "failed to get shell cache: argh\n",
+				WantData: &command.Data{Values: map[string]interface{}{
+					command.GetwdKey: wd,
+				}},
 			},
 		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			c := test.shellCache
+			if c == nil {
+				c = cache.NewTestCache(t)
+			}
+			command.StubGetwd(t, wd, nil)
 			command.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
+			command.StubValue(t, &newShell, func() (*cache.Cache, error) {
+				return c, test.newShellErr
+			})
 
 			test.etc.Node = test.d.Node()
 			command.ExecuteTest(t, test.etc)
 			command.ChangeTest(t, test.want, test.d, cmpopts.IgnoreUnexported(Dot{}), cmpopts.EquateEmpty())
+
+			if !test.ignoreHistoryCheck {
+				newH := &History{}
+				if _, err := c.GetStruct(shellCacheKey, newH); err != nil {
+					t.Fatalf("Failed to read history from cache: %v", err)
+				}
+				if diff := cmp.Diff(test.wantHistory, newH); diff != "" {
+					t.Errorf("Execute(%v) produced incorrect history (-want, +got):\n%s", test.etc.Args, diff)
+				}
+			}
 		})
 	}
 }

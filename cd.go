@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/cache"
 	"github.com/leep-frog/command/sourcerer"
 )
 
@@ -14,10 +15,13 @@ const (
 	pathArg         = "PATH"
 	subPathArg      = "SUB_PATH"
 	dirShortcutName = "dirShortcuts"
+	shellCacheKey   = "leep-cd-shell"
 )
 
 var (
 	osStat = os.Stat
+
+	upFlag = command.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", command.Default(0), command.NonNegative[int]())
 )
 
 type Dot struct {
@@ -40,13 +44,52 @@ func (*Dot) Setup() []string { return nil }
 func (d *Dot) Name() string  { return "." }
 
 func getDirectory(data *command.Data, extra ...string) string {
-	upTo := data.Int("up")
+	upTo := upFlag.Get(data)
 	path := make([]string, upTo)
 	for i := 0; i < upTo; i++ {
 		path[i] = ".."
 	}
 	path = append(path, extra...)
 	return filepath.Join(path...)
+}
+
+func (d *Dot) setHistory(c *cache.Cache, h *History) error {
+	return c.PutStruct(shellCacheKey, h)
+}
+
+var (
+	newShell = cache.NewShell
+)
+
+func (d *Dot) getHistory() (*cache.Cache, *History, error) {
+	c, err := newShell()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get shell cache: %v", err)
+	}
+
+	h := &History{}
+	if _, err := c.GetStruct(shellCacheKey, h); err != nil {
+		return nil, nil, fmt.Errorf("failed to get struct data: %v", err)
+	}
+
+	return c, h, nil
+}
+
+func (d *Dot) updateHistory(output command.Output, data *command.Data) error {
+	// Get the cache data
+	c, h, err := d.getHistory()
+	if err != nil {
+		return output.Err(err)
+	}
+
+	// Update the cache data
+	h.PrevDir = command.GetwdFromData(data)
+
+	return output.Annotatef(d.setHistory(c, h), "failed to put struct data")
+}
+
+type History struct {
+	PrevDir string
 }
 
 func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
@@ -97,18 +140,32 @@ func (d *Dot) Node() *command.Node {
 		command.Description("Changes directories"),
 		command.EchoExecuteData(),
 		command.FlagNode(
-			command.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", command.Default(0), command.NonNegative[int]()),
+			upFlag,
 		),
 		command.OptionalArg(pathArg, "destination directory", opts...),
 		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
+		command.Getwd(),
 		command.ExecutableNode(d.cd),
+		&command.ExecutorProcessor{F: d.updateHistory},
 	))
 
 	return command.AsNode(&command.BranchNode{
 		Branches: map[string]*command.Node{
 			"-": command.SerialNodes(
 				command.Description("Go to the previous directory"),
-				command.SimpleExecutableNode("cd -"),
+				command.Getwd(),
+				command.ExecutableNode(func(output command.Output, data *command.Data) ([]string, error) {
+					c, h, err := d.getHistory()
+					if err != nil {
+						return nil, output.Err(err)
+					}
+					cmd := fmt.Sprintf("cd %q", h.PrevDir)
+					if h.PrevDir == "" {
+						cmd = "cd"
+					}
+					h.PrevDir = command.GetwdFromData(data)
+					return []string{cmd}, output.Err(d.setHistory(c, h))
+				}),
 			),
 		},
 		Default:           dfltNode,
