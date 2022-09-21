@@ -73,7 +73,6 @@ func TestExecute(t *testing.T) {
 		etc                *command.ExecuteTestCase
 		osStatFI           os.FileInfo
 		osStatErr          error
-		newShellErr        error
 		shellCache         *cache.Cache
 		ignoreHistoryCheck bool
 		wantHistory        *History
@@ -84,26 +83,6 @@ func TestExecute(t *testing.T) {
 			d:           DotCLI(),
 			wantHistory: wdHist,
 			etc: &command.ExecuteTestCase{
-				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"cd"},
-				},
-				WantData: &command.Data{
-					Values: map[string]interface{}{
-						upFlag.Name():    0,
-						command.GetwdKey: cwd,
-					},
-				},
-			},
-		},
-		{
-			name:        "error if fails to get new shell",
-			osStatFI:    dirType,
-			d:           DotCLI(),
-			newShellErr: fmt.Errorf("oops"),
-			wantHistory: &History{},
-			etc: &command.ExecuteTestCase{
-				WantErr:    fmt.Errorf("failed to get shell cache: oops"),
-				WantStderr: "failed to get shell cache: oops\n",
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd"},
 				},
@@ -373,20 +352,6 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
-		{
-			name:        "minus fails if can't get newShell",
-			d:           DotCLI(),
-			wantHistory: &History{},
-			newShellErr: fmt.Errorf("argh"),
-			etc: &command.ExecuteTestCase{
-				Args:       []string{"-"},
-				WantErr:    fmt.Errorf("failed to get shell cache: argh"),
-				WantStderr: "failed to get shell cache: argh\n",
-				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
-				}},
-			},
-		},
 		// History tests
 		{
 			name:     "dot history gets truncated",
@@ -582,13 +547,18 @@ func TestExecute(t *testing.T) {
 			if c == nil {
 				c = cache.NewTestCache(t)
 			}
+			if test.etc.WantData == nil {
+				test.etc.WantData = &command.Data{Values: map[string]interface{}{}}
+			}
+			test.etc.WantData.Values[cache.ShellDataKey] = c
 			command.StubGetwd(t, cwd, nil)
 			command.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
-			command.StubValue(t, &newShell, func() (*cache.Cache, error) {
-				return c, test.newShellErr
-			})
+			cache.StubShellCache(t, c)
 
 			test.etc.Node = test.d.Node()
+			test.etc.DataCmpOpts = []cmp.Option{
+				cmp.AllowUnexported(cache.Cache{}),
+			}
 			command.ExecuteTest(t, test.etc)
 			command.ChangeTest(t, test.want, test.d, cmpopts.IgnoreUnexported(Dot{}), cmpopts.EquateEmpty())
 

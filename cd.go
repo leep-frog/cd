@@ -53,15 +53,8 @@ func getDirectory(data *command.Data, extra ...string) string {
 	return filepath.Join(path...)
 }
 
-var (
-	newShell = cache.NewShell
-)
-
-func (d *Dot) getHistory() (*cache.Cache, *History, error) {
-	c, err := newShell()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get shell cache: %v", err)
-	}
+func (d *Dot) getHistory(data *command.Data) (*cache.Cache, *History, error) {
+	c := cache.ShellFromData(data)
 
 	h := &History{}
 	if _, err := c.GetStruct(shellCacheKey, h); err != nil {
@@ -73,7 +66,7 @@ func (d *Dot) getHistory() (*cache.Cache, *History, error) {
 
 func (d *Dot) updateHistory(output command.Output, data *command.Data) error {
 	// Get the cache data
-	c, h, err := d.getHistory()
+	c, h, err := d.getHistory(data)
 	if err != nil {
 		return output.Err(err)
 	}
@@ -152,6 +145,7 @@ func (d *Dot) Node() *command.Node {
 	dfltNode := command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
 		command.Description("Changes directories"),
 		command.EchoExecuteData(),
+		cache.ShellProcessor(),
 		command.FlagNode(
 			upFlag,
 		),
@@ -165,8 +159,9 @@ func (d *Dot) Node() *command.Node {
 	return command.AsNode(&command.BranchNode{
 		Branches: map[string]*command.Node{
 			"hist": command.SerialNodes(
+				cache.ShellProcessor(),
 				&command.ExecutorProcessor{F: func(o command.Output, data *command.Data) error {
-					c, h, err := d.getHistory()
+					c, h, err := d.getHistory(data)
 					if err != nil {
 						return o.Err(err)
 					}
@@ -179,8 +174,9 @@ func (d *Dot) Node() *command.Node {
 			"-": command.SerialNodes(
 				command.Description("Go to the previous directory"),
 				command.Getwd(),
+				cache.ShellProcessor(),
 				command.ExecutableNode(func(output command.Output, data *command.Data) ([]string, error) {
-					c, h, err := d.getHistory()
+					c, h, err := d.getHistory(data)
 					if err != nil {
 						return nil, output.Err(err)
 					}
