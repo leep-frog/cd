@@ -725,6 +725,8 @@ func TestUsage(t *testing.T) {
 			"  Go to the previous directory",
 			"  -",
 			"",
+			"  hist",
+			"",
 			"Arguments:",
 			"  PATH: destination directory",
 			"  SUB_PATH: subdirectories to continue to",

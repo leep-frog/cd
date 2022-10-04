@@ -131,14 +131,14 @@ type relativeTransformer struct {
 func (d *Dot) Node() *command.Node {
 	opts := []command.ArgOpt[string]{
 		relativeFetcher(),
-		command.CompleteForExecute[string](command.CompleteForExecuteBestEffort()),
+		command.Complexecute[string](command.ComplexecuteBestEffort()),
 		&command.Transformer[string]{F: func(v string, data *command.Data) (string, error) {
 			return filepath.Abs(getDirectory(data, v))
 		}},
 	}
 
 	subOpts := []command.ArgOpt[[]string]{
-		command.CompleteForExecute[[]string](command.CompleteForExecuteBestEffort()),
+		command.Complexecute[[]string](command.ComplexecuteBestEffort()),
 		subPathFetcher(),
 	}
 
