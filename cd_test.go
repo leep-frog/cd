@@ -551,7 +551,7 @@ func TestExecute(t *testing.T) {
 				test.etc.WantData = &command.Data{Values: map[string]interface{}{}}
 			}
 			test.etc.WantData.Values[cache.ShellDataKey] = c
-			command.StubGetwd(t, cwd, nil)
+			command.StubGetwdProcessor(t, cwd, nil)
 			command.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
 			cache.StubShellCache(t, c)
 
