@@ -76,6 +76,7 @@ func TestExecute(t *testing.T) {
 		shellCache         *cache.Cache
 		ignoreHistoryCheck bool
 		wantHistory        *History
+		cwdOverride        string
 	}{
 		{
 			name:        "handles nil arguments",
@@ -121,7 +122,8 @@ func TestExecute(t *testing.T) {
 			name:        "complete for execute",
 			osStatFI:    dirType,
 			d:           DotCLI(),
-			wantHistory: wdHist,
+			wantHistory: &History{PrevDirs: []string{filepathAbs(t, ".")}},
+			cwdOverride: filepathAbs(t, "."),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"c"},
 				WantExecuteData: &command.ExecuteData{
@@ -131,7 +133,7 @@ func TestExecute(t *testing.T) {
 					Values: map[string]interface{}{
 						upFlag.Name():    0,
 						"PATH":           filepathAbs(t, "cmd"),
-						command.GetwdKey: cwd,
+						command.GetwdKey: filepathAbs(t, "."),
 					},
 				},
 			},
@@ -551,7 +553,12 @@ func TestExecute(t *testing.T) {
 				test.etc.WantData = &command.Data{Values: map[string]interface{}{}}
 			}
 			test.etc.WantData.Values[cache.ShellDataKey] = c
-			command.StubGetwdProcessor(t, cwd, nil)
+			if test.cwdOverride != "" {
+				command.StubGetwdProcessor(t, test.cwdOverride, nil)
+			} else {
+				command.StubGetwdProcessor(t, cwd, nil)
+			}
+
 			command.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
 			cache.StubShellCache(t, c)
 
@@ -577,8 +584,9 @@ func TestExecute(t *testing.T) {
 
 func TestAutocomplete(t *testing.T) {
 	for _, test := range []struct {
-		name string
-		ctc  *command.CompleteTestCase
+		name        string
+		ctc         *command.CompleteTestCase
+		cwdOverride string
 	}{
 		{
 			name: "dot completes all directories",
@@ -602,6 +610,17 @@ func TestAutocomplete(t *testing.T) {
 					"cmd/",
 					"testing/",
 					" ",
+				},
+			},
+		},
+		{
+			name: "dot completes simple directory",
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI().Node(),
+				Args: "cmd c",
+				Want: []string{
+					"cmd/",
+					"cmd/_",
 				},
 			},
 		},
@@ -700,8 +719,38 @@ func TestAutocomplete(t *testing.T) {
 				Args: "cmd testing um",
 			},
 		},
+		{
+			name:        "sub directory completion ignores current dir",
+			cwdOverride: command.FilepathAbs(t, "testing", "dir1"),
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI().Node(),
+				Args: "cmd testing ",
+				Want: []string{
+					"dir2/",
+					"other/",
+					" ",
+				},
+			},
+		},
+		{
+			name:        "sub directory completion ignores current dir if nested",
+			cwdOverride: command.FilepathAbs(t, "testing", "dir2", "something", "else"),
+			ctc: &command.CompleteTestCase{
+				Node: DotCLI().Node(),
+				Args: "cmd testing ",
+				Want: []string{
+					"dir1/",
+					"other/",
+					" ",
+				},
+			},
+		},
+		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			if test.cwdOverride != "" {
+				command.StubGetwdProcessor(t, test.cwdOverride, nil)
+			}
 			test.ctc.SkipDataCheck = true
 			command.CompleteTest(t, test.ctc)
 		})

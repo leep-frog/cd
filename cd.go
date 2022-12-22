@@ -120,6 +120,7 @@ func relativeFetcher() command.Completer[string] {
 		f := &command.FileCompleter[string]{
 			Directory:   getDirectory(data),
 			IgnoreFiles: true,
+			ExcludePwd:  true,
 		}
 		return f.Complete(s, data)
 	})
@@ -234,6 +235,7 @@ func subPathFetcher() command.Completer[[]string] {
 		ff := &command.FileCompleter[[]string]{
 			Directory:   base,
 			IgnoreFiles: true,
+			ExcludePwd:  true,
 		}
 		return ff.Complete(sl, d)
 	})
