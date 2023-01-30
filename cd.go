@@ -129,7 +129,7 @@ func relativeFetcher() command.Completer[string] {
 type relativeTransformer struct {
 }
 
-func (d *Dot) Node() *command.Node {
+func (d *Dot) Node() command.Node {
 	opts := []command.ArgOpt[string]{
 		relativeFetcher(),
 		command.Complexecute[string](command.ComplexecuteBestEffort()),
@@ -157,8 +157,8 @@ func (d *Dot) Node() *command.Node {
 		&command.ExecutorProcessor{F: d.updateHistory},
 	))
 
-	return command.AsNode(&command.BranchNode{
-		Branches: map[string]*command.Node{
+	return &command.BranchNode{
+		Branches: map[string]command.Node{
 			"hist": command.SerialNodes(
 				cache.ShellProcessor(),
 				&command.ExecutorProcessor{F: func(o command.Output, data *command.Data) error {
@@ -197,7 +197,7 @@ func (d *Dot) Node() *command.Node {
 		},
 		Default:           dfltNode,
 		DefaultCompletion: true,
-	})
+	}
 }
 
 func DotCLI() *Dot {
