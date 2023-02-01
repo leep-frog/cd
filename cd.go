@@ -147,7 +147,7 @@ func (d *Dot) Node() command.Node {
 		command.Description("Changes directories"),
 		command.EchoExecuteData(),
 		cache.ShellProcessor(),
-		command.FlagNode(
+		command.FlagProcessor(
 			upFlag,
 		),
 		command.OptionalArg(pathArg, "destination directory", opts...),
