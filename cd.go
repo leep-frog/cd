@@ -130,7 +130,7 @@ type relativeTransformer struct {
 }
 
 func (d *Dot) Node() command.Node {
-	opts := []command.ArgOpt[string]{
+	opts := []command.ArgumentOption[string]{
 		relativeFetcher(),
 		command.Complexecute[string](command.ComplexecuteBestEffort()),
 		&command.Transformer[string]{F: func(v string, data *command.Data) (string, error) {
@@ -138,7 +138,7 @@ func (d *Dot) Node() command.Node {
 		}},
 	}
 
-	subOpts := []command.ArgOpt[[]string]{
+	subOpts := []command.ArgumentOption[[]string]{
 		command.Complexecute[[]string](command.ComplexecuteBestEffort()),
 		subPathFetcher(),
 	}
@@ -153,7 +153,7 @@ func (d *Dot) Node() command.Node {
 		command.OptionalArg(pathArg, "destination directory", opts...),
 		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
 		command.GetwdProcessor(),
-		command.ExecutableNode(d.cd),
+		command.ExecutableProcessor(d.cd),
 		&command.ExecutorProcessor{F: d.updateHistory},
 	))
 
@@ -176,7 +176,7 @@ func (d *Dot) Node() command.Node {
 				command.Description("Go to the previous directory"),
 				command.GetwdProcessor(),
 				cache.ShellProcessor(),
-				command.ExecutableNode(func(output command.Output, data *command.Data) ([]string, error) {
+				command.ExecutableProcessor(func(output command.Output, data *command.Data) ([]string, error) {
 					c, h, err := d.getHistory(data)
 					if err != nil {
 						return nil, output.Err(err)
