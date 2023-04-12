@@ -8,9 +8,10 @@ import (
 )
 
 func main() {
-	os.Exit(sourcerer.Source(
+	os.Exit(sourcerer.Run(cd.DotCLI()))
+	/*os.Exit(sourcerer.Source(
 		[]sourcerer.CLI{cd.DotCLI()},
 		cd.MinusAliaser(),
 		cd.DotAliasersUpTo(10),
-	))
+	))*/
 }
