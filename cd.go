@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/leep-frog/command"
@@ -41,7 +42,7 @@ func (d *Dot) ShortcutMap() map[string]map[string][]string {
 func (d *Dot) Changed() bool { return d.changed }
 func (d *Dot) MarkChanged()  { d.changed = true }
 func (*Dot) Setup() []string { return nil }
-func (d *Dot) Name() string  { return "." }
+func (d *Dot) Name() string  { return dotName }
 
 func getDirectory(data *command.Data, extra ...string) string {
 	upTo := upFlag.Get(data)
@@ -204,6 +205,15 @@ func DotCLI() *Dot {
 	return &Dot{}
 }
 
+var (
+	dotName = func() string {
+		if runtime.GOOS == "linux" {
+			return "."
+		}
+		return "d"
+	}()
+)
+
 // MinusAliaser returns an alias for ". -"
 func MinusAliaser() sourcerer.Option {
 	return sourcerer.NewAliaser("-", ".", "-")
@@ -212,14 +222,14 @@ func MinusAliaser() sourcerer.Option {
 // DotAliaser returns an aliaser option that searches `n` directories up with
 // an alias of n `.` characters.
 func DotAliaser(n int) sourcerer.Option {
-	return sourcerer.NewAliaser(strings.Repeat(".", n), fmt.Sprintf(". -u %d", n-1))
+	return sourcerer.NewAliaser(strings.Repeat(dotName, n), fmt.Sprintf(". -u %d", n-1))
 }
 
 // DotAliasersUpTo returns `DotAliaser` options from 2 to `n`.
 func DotAliasersUpTo(n int) sourcerer.Option {
 	m := map[string][]string{}
 	for i := 2; i <= n; i++ {
-		m[strings.Repeat(".", i)] = []string{".", "-u", fmt.Sprintf("%d", i-1)}
+		m[strings.Repeat(dotName, i)] = []string{".", "-u", fmt.Sprintf("%d", i-1)}
 	}
 	return sourcerer.Aliasers(m)
 }

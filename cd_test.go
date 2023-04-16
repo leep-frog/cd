@@ -66,6 +66,8 @@ func TestExecute(t *testing.T) {
 	cwd := "prev/dir/1"
 	wdHist := &History{[]string{cwd}}
 
+	command.StubValue(t, &dotName, ".")
+
 	for _, test := range []struct {
 		name               string
 		d                  *Dot
@@ -758,6 +760,7 @@ func TestAutocomplete(t *testing.T) {
 }
 
 func TestMetadata(t *testing.T) {
+	command.StubValue(t, &dotName, ".")
 	wantName := "."
 	if got := DotCLI().Name(); got != wantName {
 		t.Errorf("Name() returned %q; want %q", got, wantName)
