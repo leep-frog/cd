@@ -223,8 +223,8 @@ func DotAliaser(n int) sourcerer.Option {
 func DotAliasersUpTo(n int) sourcerer.Option {
 	m := map[string][]string{}
 	for i := 2; i <= n; i++ {
-		m[strings.Repeat(dotName, i)] = []string{".", "-u", fmt.Sprintf("%d", i-1)}
-		m[fmt.Sprintf("%s%d", dotName, i)] = []string{".", "-u", fmt.Sprintf("%d", i-1)}
+		m[strings.Repeat(dotName, i)] = []string{dotName, "-u", fmt.Sprintf("%d", i-1)}
+		m[fmt.Sprintf("%s%d", dotName, i)] = []string{dotName, "-u", fmt.Sprintf("%d", i-1)}
 	}
 	return sourcerer.Aliasers(m)
 }
