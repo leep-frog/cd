@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/leep-frog/command"
@@ -207,7 +206,7 @@ func DotCLI() *Dot {
 
 var (
 	dotName = func() string {
-		if runtime.GOOS == "linux" {
+		if sourcerer.CurrentOS.Name() == "linux" {
 			return "."
 		}
 		return "d"
