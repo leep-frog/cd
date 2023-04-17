@@ -210,7 +210,7 @@ var (
 
 // MinusAliaser returns an alias for ". -"
 func MinusAliaser() sourcerer.Option {
-	return sourcerer.NewAliaser("-", ".", "-")
+	return sourcerer.NewAliaser("m", "d", "-")
 }
 
 // DotAliaser returns an aliaser option that searches `n` directories up with
