@@ -565,6 +565,7 @@ func TestExecute(t *testing.T) {
 			cache.StubShellCache(t, c)
 
 			test.etc.Node = test.d.Node()
+			test.etc.OS = &command.FakeOS{}
 			test.etc.DataCmpOpts = []cmp.Option{
 				cmp.AllowUnexported(cache.Cache{}),
 			}
@@ -754,6 +755,7 @@ func TestAutocomplete(t *testing.T) {
 				command.StubGetwdProcessor(t, test.cwdOverride, nil)
 			}
 			test.ctc.SkipDataCheck = true
+			test.ctc.OS = &command.FakeOS{}
 			command.CompleteTest(t, test.ctc)
 		})
 	}
