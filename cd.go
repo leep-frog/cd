@@ -205,12 +205,7 @@ func DotCLI() *Dot {
 }
 
 var (
-	dotName = func() string {
-		if sourcerer.CurrentOS.Name() == "linux" {
-			return "."
-		}
-		return "d"
-	}()
+	dotName = "d"
 )
 
 // MinusAliaser returns an alias for ". -"
@@ -229,6 +224,7 @@ func DotAliasersUpTo(n int) sourcerer.Option {
 	m := map[string][]string{}
 	for i := 2; i <= n; i++ {
 		m[strings.Repeat(dotName, i)] = []string{".", "-u", fmt.Sprintf("%d", i-1)}
+		m[fmt.Sprintf("%s%d", dotName, i)] = []string{".", "-u", fmt.Sprintf("%d", i-1)}
 	}
 	return sourcerer.Aliasers(m)
 }
