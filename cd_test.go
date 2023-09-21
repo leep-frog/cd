@@ -556,9 +556,9 @@ func TestExecute(t *testing.T) {
 			}
 			test.etc.WantData.Values[cache.ShellDataKey] = c
 			if test.cwdOverride != "" {
-				command.StubGetwdProcessor(t, test.cwdOverride, nil)
+				command.StubGetwd(t, test.cwdOverride, nil)
 			} else {
-				command.StubGetwdProcessor(t, cwd, nil)
+				command.StubGetwd(t, cwd, nil)
 			}
 
 			command.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
@@ -752,7 +752,7 @@ func TestAutocomplete(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if test.cwdOverride != "" {
-				command.StubGetwdProcessor(t, test.cwdOverride, nil)
+				command.StubGetwd(t, test.cwdOverride, nil)
 			}
 			test.ctc.SkipDataCheck = true
 			test.ctc.OS = &command.FakeOS{}

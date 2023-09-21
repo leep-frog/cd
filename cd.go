@@ -80,7 +80,7 @@ type History struct {
 }
 
 func (h *History) append(c *cache.Cache, data *command.Data) error {
-	dir := command.Getwd(data)
+	dir := command.Getwd.Get(data)
 
 	// No need to update if previous directory is the same.
 	if len(h.PrevDirs) > 0 && h.PrevDirs[len(h.PrevDirs)-1] == dir {
@@ -152,7 +152,7 @@ func (d *Dot) Node() command.Node {
 		),
 		command.OptionalArg(pathArg, "destination directory", opts...),
 		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
-		command.GetwdProcessor(),
+		command.Getwd,
 		command.ExecutableProcessor(d.cd),
 		&command.ExecutorProcessor{F: d.updateHistory},
 	))
@@ -166,7 +166,7 @@ func (d *Dot) Node() command.Node {
 					if err != nil {
 						return o.Err(err)
 					}
-					o.Stdoutln("WD: ", command.Getwd(data))
+					o.Stdoutln("WD: ", command.Getwd.Get(data))
 					o.Stdoutln("HISTORY: ", h)
 					o.Stdoutln("CACHE: ", c.Dir, c)
 					return nil
@@ -174,14 +174,14 @@ func (d *Dot) Node() command.Node {
 			),
 			"-": command.SerialNodes(
 				command.Description("Go to the previous directory"),
-				command.GetwdProcessor(),
+				command.Getwd,
 				cache.ShellProcessor(),
 				command.ExecutableProcessor(func(output command.Output, data *command.Data) ([]string, error) {
 					c, h, err := d.getHistory(data)
 					if err != nil {
 						return nil, output.Err(err)
 					}
-					wd := command.Getwd(data)
+					wd := command.Getwd.Get(data)
 					pd := wd
 					for i := len(h.PrevDirs) - 1; pd == wd && i >= 0; i-- {
 						pd = h.PrevDirs[i]
