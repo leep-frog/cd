@@ -213,10 +213,15 @@ func MinusAliaser() sourcerer.Option {
 	return sourcerer.NewAliaser("m", "d", "-")
 }
 
-// DotAliaser returns an aliaser option that searches `n` directories up with
+// DotAliaser returns an `Aliaser` option that searches `n` directories up with
 // an alias of n `.` characters.
 func DotAliaser(n int) sourcerer.Option {
 	return sourcerer.NewAliaser(strings.Repeat(dotName, n), fmt.Sprintf(". -u %d", n-1))
+}
+
+// DotUpToAliaser returns an `Aliaser` that goes up k directories (the first argument), with an optional sub-path argument.
+func DotUpToAliaser() sourcerer.Option {
+	return sourcerer.NewAliaser(fmt.Sprintf("%s%c", dotName, upFlag.ShortName()), dotName, fmt.Sprintf("--%s", upFlag.Name()))
 }
 
 // DotAliasersUpTo returns `DotAliaser` options from 2 to `n`.
