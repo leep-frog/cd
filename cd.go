@@ -219,17 +219,12 @@ func DotAliaser(n int) sourcerer.Option {
 	return sourcerer.NewAliaser(strings.Repeat(dotName, n), fmt.Sprintf(". -u %d", n-1))
 }
 
-// DotUpToAliaser returns an `Aliaser` that goes up k directories (the first argument), with an optional sub-path argument.
-func DotUpToAliaser() sourcerer.Option {
-	return sourcerer.NewAliaser(fmt.Sprintf("%s%c", dotName, upFlag.ShortName()), dotName, fmt.Sprintf("--%s", upFlag.Name()))
-}
-
 // DotAliasersUpTo returns `DotAliaser` options from 2 to `n`.
-func DotAliasersUpTo(n int) sourcerer.Option {
+func DotAliasersUpTo(suffix string, n int) sourcerer.Option {
 	m := map[string][]string{}
-	for i := 2; i <= n; i++ {
-		m[strings.Repeat(dotName, i)] = []string{dotName, "-u", fmt.Sprintf("%d", i-1)}
-		m[fmt.Sprintf("%s%d", dotName, i)] = []string{dotName, "-u", fmt.Sprintf("%d", i-1)}
+	for i := 1; i <= n; i++ {
+		m[fmt.Sprintf("%s%s", dotName, strings.Repeat(suffix, i))] = []string{dotName, "-u", fmt.Sprintf("%d", i)}
+		m[fmt.Sprintf("%s%d", dotName, i)] = []string{dotName, "-u", fmt.Sprintf("%d", i)}
 	}
 	return sourcerer.Aliasers(m)
 }
