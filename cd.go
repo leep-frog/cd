@@ -220,11 +220,11 @@ func DotAliaser(n int) sourcerer.Option {
 }
 
 // DotAliasersUpTo returns `DotAliaser` options from 2 to `n`.
-func DotAliasersUpTo(suffix string, n int) sourcerer.Option {
+func DotAliasersUpTo(prefix, suffix string, n int) sourcerer.Option {
 	m := map[string][]string{}
 	for i := 1; i <= n; i++ {
-		m[fmt.Sprintf("%s%s", dotName, strings.Repeat(suffix, i))] = []string{dotName, "-u", fmt.Sprintf("%d", i)}
-		m[fmt.Sprintf("%s%d", dotName, i)] = []string{dotName, "-u", fmt.Sprintf("%d", i)}
+		m[fmt.Sprintf("%s%s", prefix, strings.Repeat(suffix, i))] = []string{dotName, "-u", fmt.Sprintf("%d", i)}
+		m[fmt.Sprintf("%s%d", prefix, i)] = []string{dotName, "-u", fmt.Sprintf("%d", i)}
 	}
 	return sourcerer.Aliasers(m)
 }
