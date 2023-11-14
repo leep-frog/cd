@@ -595,11 +595,13 @@ func TestAutocomplete(t *testing.T) {
 			name: "dot completes all directories",
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
-				Want: []string{
-					".git/",
-					"cmd/",
-					"testing/",
-					" ",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						".git/",
+						"cmd/",
+						"testing/",
+						" ",
+					},
 				},
 			},
 		},
@@ -608,11 +610,13 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd ",
-				Want: []string{
-					".git/",
-					"cmd/",
-					"testing/",
-					" ",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						".git/",
+						"cmd/",
+						"testing/",
+						" ",
+					},
 				},
 			},
 		},
@@ -621,9 +625,11 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd c",
-				Want: []string{
-					"cmd/",
-					"cmd/_",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"cmd/",
+					},
+					SpacelessCompletion: true,
 				},
 			},
 		},
@@ -639,9 +645,11 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd te",
-				Want: []string{
-					"testing/",
-					"testing/_",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"testing/",
+					},
+					SpacelessCompletion: true,
 				},
 			},
 		},
@@ -650,9 +658,11 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing/o",
-				Want: []string{
-					"testing/other/",
-					"testing/other/_",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"testing/other/",
+					},
+					SpacelessCompletion: true,
 				},
 			},
 		},
@@ -661,11 +671,13 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing ",
-				Want: []string{
-					"dir1/",
-					"dir2/",
-					"other/",
-					" ",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"dir1/",
+						"dir2/",
+						"other/",
+						" ",
+					},
 				},
 			},
 		},
@@ -674,11 +686,13 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing dir1/",
-				Want: []string{
-					"another/",
-					"folderA/",
-					"folderB/",
-					" ",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"another/",
+						"folderA/",
+						"folderB/",
+						" ",
+					},
 				},
 			},
 		},
@@ -687,9 +701,11 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing dir1/fold",
-				Want: []string{
-					"dir1/folder",
-					"dir1/folder_",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"dir1/folder",
+					},
+					SpacelessCompletion: true,
 				},
 			},
 		},
@@ -698,9 +714,11 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing d",
-				Want: []string{
-					"dir",
-					"dir_",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"dir",
+					},
+					SpacelessCompletion: true,
 				},
 			},
 		},
@@ -709,9 +727,11 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing d",
-				Want: []string{
-					"dir",
-					"dir_",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"dir",
+					},
+					SpacelessCompletion: true,
 				},
 			},
 		},
@@ -728,10 +748,12 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing ",
-				Want: []string{
-					"dir2/",
-					"other/",
-					" ",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"dir2/",
+						"other/",
+						" ",
+					},
 				},
 			},
 		},
@@ -741,10 +763,12 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing ",
-				Want: []string{
-					"dir1/",
-					"other/",
-					" ",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"dir1/",
+						"other/",
+						" ",
+					},
 				},
 			},
 		},
@@ -753,6 +777,12 @@ func TestAutocomplete(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if test.cwdOverride != "" {
 				command.StubGetwd(t, test.cwdOverride, nil)
+			}
+
+			if test.ctc.Want != nil {
+				for i, v := range test.ctc.Want.Suggestions {
+					test.ctc.Want.Suggestions[i] = filepath.FromSlash(v)
+				}
 			}
 			test.ctc.SkipDataCheck = true
 			test.ctc.OS = &command.FakeOS{}
@@ -774,12 +804,12 @@ func TestUsage(t *testing.T) {
 		Node: DotCLI().Node(),
 		WantString: []string{
 			"Changes directories",
-			"< * [ PATH ] [ SUB_PATH ... ] --up|-u",
-			"",
-			"  Go to the previous directory",
-			"  -",
-			"",
-			"  hist",
+			"┳ * [ PATH ] [ SUB_PATH ... ] --up|-u",
+			"┃",
+			"┃   Go to the previous directory",
+			"┣━━ -",
+			"┃",
+			"┗━━ hist",
 			"",
 			"Arguments:",
 			"  PATH: destination directory",
@@ -790,7 +820,7 @@ func TestUsage(t *testing.T) {
 			"",
 			"Symbols:",
 			command.ShortcutDesc,
-			command.BranchDesc,
+			command.BranchDescWithDefault,
 		},
 	})
 }
