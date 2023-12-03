@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
+	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/sourcerer"
 )
 
@@ -21,7 +22,7 @@ const (
 var (
 	osStat = os.Stat
 
-	upFlag = command.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", command.Default(0), command.NonNegative[int]())
+	upFlag = commander.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", commander.Default(0), commander.NonNegative[int]())
 )
 
 type Dot struct {
@@ -80,7 +81,7 @@ type History struct {
 }
 
 func (h *History) append(c *cache.Cache, data *command.Data) error {
-	dir := command.Getwd.Get(data)
+	dir := commander.Getwd.Get(data)
 
 	// No need to update if previous directory is the same.
 	if len(h.PrevDirs) > 0 && h.PrevDirs[len(h.PrevDirs)-1] == dir {
@@ -115,9 +116,9 @@ func (d *Dot) cd(output command.Output, data *command.Data) ([]string, error) {
 	return []string{fmt.Sprintf("cd %q", filepath.Join(subPaths...))}, nil
 }
 
-func relativeFetcher() command.Completer[string] {
-	return command.CompleterFromFunc(func(s string, data *command.Data) (*command.Completion, error) {
-		f := &command.FileCompleter[string]{
+func relativeFetcher() commander.Completer[string] {
+	return commander.CompleterFromFunc(func(s string, data *command.Data) (*command.Completion, error) {
+		f := &commander.FileCompleter[string]{
 			Directory:   getDirectory(data),
 			IgnoreFiles: true,
 			ExcludePwd:  true,
@@ -130,58 +131,58 @@ type relativeTransformer struct {
 }
 
 func (d *Dot) Node() command.Node {
-	opts := []command.ArgumentOption[string]{
+	opts := []commander.ArgumentOption[string]{
 		relativeFetcher(),
-		command.Complexecute[string](command.ComplexecuteBestEffort()),
-		&command.Transformer[string]{F: func(v string, data *command.Data) (string, error) {
+		commander.Complexecute[string](commander.ComplexecuteBestEffort()),
+		&commander.Transformer[string]{F: func(v string, data *command.Data) (string, error) {
 			return filepath.Abs(getDirectory(data, v))
 		}},
 	}
 
-	subOpts := []command.ArgumentOption[[]string]{
-		command.Complexecute[[]string](command.ComplexecuteBestEffort()),
+	subOpts := []commander.ArgumentOption[[]string]{
+		commander.Complexecute[[]string](commander.ComplexecuteBestEffort()),
 		subPathFetcher(),
 	}
 
-	dfltNode := command.ShortcutNode(dirShortcutName, d, command.SerialNodes(
-		command.Description("Changes directories"),
-		command.EchoExecuteData(),
+	dfltNode := commander.ShortcutNode(dirShortcutName, d, commander.SerialNodes(
+		commander.Description("Changes directories"),
+		commander.EchoExecuteData(),
 		cache.ShellProcessor(),
-		command.FlagProcessor(
+		commander.FlagProcessor(
 			upFlag,
 		),
-		command.OptionalArg(pathArg, "destination directory", opts...),
-		command.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
-		command.Getwd,
-		command.ExecutableProcessor(d.cd),
-		&command.ExecutorProcessor{F: d.updateHistory},
+		commander.OptionalArg(pathArg, "destination directory", opts...),
+		commander.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
+		commander.Getwd,
+		commander.ExecutableProcessor(d.cd),
+		&commander.ExecutorProcessor{F: d.updateHistory},
 	))
 
-	return &command.BranchNode{
+	return &commander.BranchNode{
 		Branches: map[string]command.Node{
-			"hist": command.SerialNodes(
+			"hist": commander.SerialNodes(
 				cache.ShellProcessor(),
-				&command.ExecutorProcessor{F: func(o command.Output, data *command.Data) error {
+				&commander.ExecutorProcessor{F: func(o command.Output, data *command.Data) error {
 					c, h, err := d.getHistory(data)
 					if err != nil {
 						return o.Err(err)
 					}
-					o.Stdoutln("WD: ", command.Getwd.Get(data))
+					o.Stdoutln("WD: ", commander.Getwd.Get(data))
 					o.Stdoutln("HISTORY: ", h)
 					o.Stdoutln("CACHE: ", c.Dir, c)
 					return nil
 				}},
 			),
-			"-": command.SerialNodes(
-				command.Description("Go to the previous directory"),
-				command.Getwd,
+			"-": commander.SerialNodes(
+				commander.Description("Go to the previous directory"),
+				commander.Getwd,
 				cache.ShellProcessor(),
-				command.ExecutableProcessor(func(output command.Output, data *command.Data) ([]string, error) {
+				commander.ExecutableProcessor(func(output command.Output, data *command.Data) ([]string, error) {
 					c, h, err := d.getHistory(data)
 					if err != nil {
 						return nil, output.Err(err)
 					}
-					wd := command.Getwd.Get(data)
+					wd := commander.Getwd.Get(data)
 					pd := wd
 					for i := len(h.PrevDirs) - 1; pd == wd && i >= 0; i-- {
 						pd = h.PrevDirs[i]
@@ -229,15 +230,15 @@ func DotAliasersUpTo(prefix, suffix string, n int) sourcerer.Option {
 	return sourcerer.Aliasers(m)
 }
 
-func subPathFetcher() command.Completer[[]string] {
-	return command.CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+func subPathFetcher() commander.Completer[[]string] {
+	return commander.CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 		base := filepath.Join(append(
 			[]string{getDirectory(d, d.String(pathArg))},
 			// Remove last file/directory part from provided path
 			sl[:len(sl)-1]...,
 		)...)
 
-		ff := &command.FileCompleter[[]string]{
+		ff := &commander.FileCompleter[[]string]{
 			Directory:   base,
 			IgnoreFiles: true,
 			ExcludePwd:  true,

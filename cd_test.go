@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
+	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commandertest"
+	"github.com/leep-frog/command/commandtest"
 )
 
 func filepathAbs(t *testing.T, path string) string {
@@ -66,13 +70,13 @@ func TestExecute(t *testing.T) {
 	cwd := "prev/dir/1"
 	wdHist := &History{[]string{cwd}}
 
-	command.StubValue(t, &dotName, ".")
+	commandtest.StubValue(t, &dotName, ".")
 
 	for _, test := range []struct {
 		name               string
 		d                  *Dot
 		want               *Dot
-		etc                *command.ExecuteTestCase
+		etc                *commandtest.ExecuteTestCase
 		osStatFI           os.FileInfo
 		osStatErr          error
 		shellCache         *cache.Cache
@@ -85,14 +89,14 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd"},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():    0,
-						command.GetwdKey: cwd,
+						upFlag.Name():      0,
+						commander.GetwdKey: cwd,
 					},
 				},
 			},
@@ -106,7 +110,7 @@ func TestExecute(t *testing.T) {
 			}),
 			ignoreHistoryCheck: true,
 			wantHistory:        &History{},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				WantErr:    fmt.Errorf("failed to get struct data: failed to unmarshal cache data: invalid character '}' looking for beginning of value"),
 				WantStderr: "failed to get struct data: failed to unmarshal cache data: invalid character '}' looking for beginning of value\n",
 				WantExecuteData: &command.ExecuteData{
@@ -114,8 +118,8 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():    0,
-						command.GetwdKey: cwd,
+						upFlag.Name():      0,
+						commander.GetwdKey: cwd,
 					},
 				},
 			},
@@ -126,16 +130,16 @@ func TestExecute(t *testing.T) {
 			d:           DotCLI(),
 			wantHistory: &History{PrevDirs: []string{filepathAbs(t, ".")}},
 			cwdOverride: filepathAbs(t, "."),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"c"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{fmt.Sprintf("cd %q", filepathAbs(t, "cmd"))},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():    0,
-						"PATH":           filepathAbs(t, "cmd"),
-						command.GetwdKey: filepathAbs(t, "."),
+						upFlag.Name():      0,
+						"PATH":             filepathAbs(t, "cmd"),
+						commander.GetwdKey: filepathAbs(t, "."),
 					},
 				},
 			},
@@ -145,14 +149,14 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd"},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():    0,
-						command.GetwdKey: cwd,
+						upFlag.Name():      0,
+						commander.GetwdKey: cwd,
 					},
 				},
 			},
@@ -162,15 +166,15 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"cd"},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():    0,
-						command.GetwdKey: cwd,
+						upFlag.Name():      0,
+						commander.GetwdKey: cwd,
 					},
 				},
 			},
@@ -180,7 +184,7 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"some thing"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -189,9 +193,9 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						pathArg:          filepathAbs(t, "some thing"),
-						upFlag.Name():    0,
-						command.GetwdKey: cwd,
+						pathArg:            filepathAbs(t, "some thing"),
+						upFlag.Name():      0,
+						commander.GetwdKey: cwd,
 					},
 				},
 			},
@@ -201,7 +205,7 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"-u", "2"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -210,8 +214,8 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():    2,
-						command.GetwdKey: cwd,
+						upFlag.Name():      2,
+						commander.GetwdKey: cwd,
 					},
 				},
 			},
@@ -221,7 +225,7 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{filepathAbs(t, "../../..")},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -229,9 +233,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:          filepathAbs(t, filepath.Join("..", "..", "..")),
-					upFlag.Name():    0,
-					command.GetwdKey: cwd,
+					pathArg:            filepathAbs(t, filepath.Join("..", "..", "..")),
+					upFlag.Name():      0,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -240,7 +244,7 @@ func TestExecute(t *testing.T) {
 			osStatFI:    fileType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"something/somewhere.txt", "--up", "3"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -248,9 +252,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:          filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
-					upFlag.Name():    3,
-					command.GetwdKey: cwd,
+					pathArg:            filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
+					upFlag.Name():      3,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -259,7 +263,7 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"some where/"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -267,9 +271,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:          filepathAbs(t, filepath.Join("some where")),
-					upFlag.Name():    0,
-					command.GetwdKey: cwd,
+					pathArg:            filepathAbs(t, filepath.Join("some where")),
+					upFlag.Name():      0,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -278,7 +282,7 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"some", "thing", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -286,10 +290,10 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:          filepathAbs(t, filepath.Join("some")),
-					subPathArg:       []string{"thing", "some", "where"},
-					upFlag.Name():    0,
-					command.GetwdKey: cwd,
+					pathArg:            filepathAbs(t, filepath.Join("some")),
+					subPathArg:         []string{"thing", "some", "where"},
+					upFlag.Name():      0,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -298,7 +302,7 @@ func TestExecute(t *testing.T) {
 			osStatFI:    dirType,
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"some", "thing", "-u", "1", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -306,10 +310,10 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:          filepathAbs(t, filepath.Join("..", "some")),
-					subPathArg:       []string{"thing", "some", "where"},
-					upFlag.Name():    1,
-					command.GetwdKey: cwd,
+					pathArg:            filepathAbs(t, filepath.Join("..", "some")),
+					subPathArg:         []string{"thing", "some", "where"},
+					upFlag.Name():      1,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -328,7 +332,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			}),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"-"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -336,7 +340,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -344,7 +348,7 @@ func TestExecute(t *testing.T) {
 			name:        "minus goes home if no history",
 			d:           DotCLI(),
 			wantHistory: wdHist,
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"-"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -352,7 +356,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -376,15 +380,15 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			}),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"somewhere"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{fmt.Sprintf("cd %q", filepathAbs(t, "somewhere"))},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
-					"PATH":           filepathAbs(t, "somewhere"),
-					upFlag.Name():    0,
+					commander.GetwdKey: cwd,
+					"PATH":             filepathAbs(t, "somewhere"),
+					upFlag.Name():      0,
 				}},
 			},
 		},
@@ -406,7 +410,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			}),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"-"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -414,7 +418,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -442,15 +446,15 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			}),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"somewhere"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{fmt.Sprintf("cd %q", filepathAbs(t, "somewhere"))},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
-					"PATH":           filepathAbs(t, "somewhere"),
-					upFlag.Name():    0,
+					commander.GetwdKey: cwd,
+					"PATH":             filepathAbs(t, "somewhere"),
+					upFlag.Name():      0,
 				}},
 			},
 		},
@@ -477,7 +481,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			}),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"-"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -485,7 +489,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -505,15 +509,15 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			}),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"somewhere"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{fmt.Sprintf("cd %q", filepathAbs(t, "somewhere"))},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
-					"PATH":           filepathAbs(t, "somewhere"),
-					upFlag.Name():    0,
+					commander.GetwdKey: cwd,
+					"PATH":             filepathAbs(t, "somewhere"),
+					upFlag.Name():      0,
 				}},
 			},
 		},
@@ -532,7 +536,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			}),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"-"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -540,7 +544,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					command.GetwdKey: cwd,
+					commander.GetwdKey: cwd,
 				}},
 			},
 		},
@@ -556,21 +560,21 @@ func TestExecute(t *testing.T) {
 			}
 			test.etc.WantData.Values[cache.ShellDataKey] = c
 			if test.cwdOverride != "" {
-				command.StubGetwd(t, test.cwdOverride, nil)
+				commandtest.StubGetwd(t, test.cwdOverride, nil)
 			} else {
-				command.StubGetwd(t, cwd, nil)
+				commandtest.StubGetwd(t, cwd, nil)
 			}
 
-			command.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
+			commandtest.StubValue(t, &osStat, func(path string) (os.FileInfo, error) { return test.osStatFI, test.osStatErr })
 			cache.StubShellCache(t, c)
 
 			test.etc.Node = test.d.Node()
-			test.etc.OS = &command.FakeOS{}
+			test.etc.OS = &commandtest.FakeOS{}
 			test.etc.DataCmpOpts = []cmp.Option{
 				cmp.AllowUnexported(cache.Cache{}),
 			}
-			command.ExecuteTest(t, test.etc)
-			command.ChangeTest(t, test.want, test.d, cmpopts.IgnoreUnexported(Dot{}), cmpopts.EquateEmpty())
+			commandertest.ExecuteTest(t, test.etc)
+			commandertest.ChangeTest(t, test.want, test.d, cmpopts.IgnoreUnexported(Dot{}), cmpopts.EquateEmpty())
 
 			if !test.ignoreHistoryCheck {
 				newH := &History{}
@@ -588,12 +592,12 @@ func TestExecute(t *testing.T) {
 func TestAutocomplete(t *testing.T) {
 	for _, test := range []struct {
 		name        string
-		ctc         *command.CompleteTestCase
+		ctc         *commandtest.CompleteTestCase
 		cwdOverride string
 	}{
 		{
 			name: "dot completes all directories",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Want: &command.Autocompletion{
 					Suggestions: []string{
@@ -607,7 +611,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completes all directories with command",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd ",
 				Want: &command.Autocompletion{
@@ -622,7 +626,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completes simple directory",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd c",
 				Want: &command.Autocompletion{
@@ -635,14 +639,14 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot handles no match",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd uhh",
 			},
 		},
 		{
 			name: "dot completes directories that match",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd te",
 				Want: &command.Autocompletion{
@@ -655,7 +659,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completes nested directories",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing/o",
 				Want: &command.Autocompletion{
@@ -668,7 +672,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completes sub directories",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing ",
 				Want: &command.Autocompletion{
@@ -683,7 +687,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completes sub nested directories",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing dir1/",
 				Want: &command.Autocompletion{
@@ -698,7 +702,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completes partial sub nested directories",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing dir1/fold",
 				Want: &command.Autocompletion{
@@ -711,7 +715,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completes partial sub directories",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing d",
 				Want: &command.Autocompletion{
@@ -724,7 +728,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completes partial sub directories",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing d",
 				Want: &command.Autocompletion{
@@ -737,15 +741,15 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name: "dot completion handles no match for sub directories",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing um",
 			},
 		},
 		{
 			name:        "sub directory completion ignores current dir",
-			cwdOverride: command.FilepathAbs(t, "testing", "dir1"),
-			ctc: &command.CompleteTestCase{
+			cwdOverride: commandtest.FilepathAbs(t, "testing", "dir1"),
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing ",
 				Want: &command.Autocompletion{
@@ -759,8 +763,8 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name:        "sub directory completion ignores current dir if nested",
-			cwdOverride: command.FilepathAbs(t, "testing", "dir2", "something", "else"),
-			ctc: &command.CompleteTestCase{
+			cwdOverride: commandtest.FilepathAbs(t, "testing", "dir2", "something", "else"),
+			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd testing ",
 				Want: &command.Autocompletion{
@@ -776,7 +780,7 @@ func TestAutocomplete(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if test.cwdOverride != "" {
-				command.StubGetwd(t, test.cwdOverride, nil)
+				commandtest.StubGetwd(t, test.cwdOverride, nil)
 			}
 
 			if test.ctc.Want != nil {
@@ -785,14 +789,14 @@ func TestAutocomplete(t *testing.T) {
 				}
 			}
 			test.ctc.SkipDataCheck = true
-			test.ctc.OS = &command.FakeOS{}
-			command.CompleteTest(t, test.ctc)
+			test.ctc.OS = &commandtest.FakeOS{}
+			commandertest.AutocompleteTest(t, test.ctc)
 		})
 	}
 }
 
 func TestMetadata(t *testing.T) {
-	command.StubValue(t, &dotName, ".")
+	commandtest.StubValue(t, &dotName, ".")
 	wantName := "."
 	if got := DotCLI().Name(); got != wantName {
 		t.Errorf("Name() returned %q; want %q", got, wantName)
@@ -800,9 +804,10 @@ func TestMetadata(t *testing.T) {
 }
 
 func TestUsage(t *testing.T) {
-	command.UsageTest(t, &command.UsageTestCase{
+	commandertest.ExecuteTest(t, &commandtest.ExecuteTestCase{
 		Node: DotCLI().Node(),
-		WantString: []string{
+		Args: []string{"--help"},
+		WantStdout: strings.Join([]string{
 			"Changes directories",
 			"┳ * [ PATH ] [ SUB_PATH ... ] --up|-u",
 			"┃",
@@ -819,8 +824,8 @@ func TestUsage(t *testing.T) {
 			"  [u] up: Number of directories to go up when cd-ing",
 			"",
 			"Symbols:",
-			command.ShortcutDesc,
-			command.BranchDescWithDefault,
-		},
+			"  *: Start of new shortcut-able section",
+			"",
+		}, "\n"),
 	})
 }
