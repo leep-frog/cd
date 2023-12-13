@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/leep-frog/command/cache"
+	"github.com/leep-frog/command/cache/cachetest"
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandertest"
@@ -105,7 +106,7 @@ func TestExecute(t *testing.T) {
 			name:     "error if GetStruct error",
 			osStatFI: dirType,
 			d:        DotCLI(),
-			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+			shellCache: cachetest.NewTestCacheWithData(t, map[string]interface{}{
 				shellCacheKey: "} invalid json {",
 			}),
 			ignoreHistoryCheck: true,
@@ -325,7 +326,7 @@ func TestExecute(t *testing.T) {
 				"old/dir",
 				cwd,
 			}},
-			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+			shellCache: cachetest.NewTestCacheWithData(t, map[string]interface{}{
 				shellCacheKey: &History{
 					PrevDirs: []string{
 						"old/dir",
@@ -369,7 +370,7 @@ func TestExecute(t *testing.T) {
 				"old/dir/5",
 				cwd,
 			}},
-			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+			shellCache: cachetest.NewTestCacheWithData(t, map[string]interface{}{
 				shellCacheKey: &History{
 					PrevDirs: []string{
 						"old/dir/1",
@@ -399,7 +400,7 @@ func TestExecute(t *testing.T) {
 				"old/dir/5",
 				cwd,
 			}},
-			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+			shellCache: cachetest.NewTestCacheWithData(t, map[string]interface{}{
 				shellCacheKey: &History{
 					PrevDirs: []string{
 						"old/dir/1",
@@ -434,7 +435,7 @@ func TestExecute(t *testing.T) {
 				cwd,
 				cwd,
 			}},
-			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+			shellCache: cachetest.NewTestCacheWithData(t, map[string]interface{}{
 				shellCacheKey: &History{
 					PrevDirs: []string{
 						"old/dir/1",
@@ -469,7 +470,7 @@ func TestExecute(t *testing.T) {
 				cwd,
 				cwd,
 			}},
-			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+			shellCache: cachetest.NewTestCacheWithData(t, map[string]interface{}{
 				shellCacheKey: &History{
 					PrevDirs: []string{
 						"old/dir/1",
@@ -501,7 +502,7 @@ func TestExecute(t *testing.T) {
 				cwd,
 			}},
 			osStatFI: dirType,
-			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+			shellCache: cachetest.NewTestCacheWithData(t, map[string]interface{}{
 				shellCacheKey: &History{
 					PrevDirs: []string{
 						"old/dir/1",
@@ -528,7 +529,7 @@ func TestExecute(t *testing.T) {
 				"old/dir/1",
 				cwd,
 			}},
-			shellCache: cache.NewTestCacheWithData(t, map[string]interface{}{
+			shellCache: cachetest.NewTestCacheWithData(t, map[string]interface{}{
 				shellCacheKey: &History{
 					PrevDirs: []string{
 						"old/dir/1",
@@ -553,7 +554,7 @@ func TestExecute(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			c := test.shellCache
 			if c == nil {
-				c = cache.NewTestCache(t)
+				c = cachetest.NewTestCache(t)
 			}
 			if test.etc.WantData == nil {
 				test.etc.WantData = &command.Data{Values: map[string]interface{}{}}
@@ -809,7 +810,7 @@ func TestUsage(t *testing.T) {
 		Args: []string{"--help"},
 		WantStdout: strings.Join([]string{
 			"Changes directories",
-			"┳ * [ PATH ] [ SUB_PATH ... ] --up|-u",
+			"┳ { shortcuts } [ PATH ] [ SUB_PATH ... ] --up|-u UP",
 			"┃",
 			"┃   Go to the previous directory",
 			"┣━━ -",
@@ -822,9 +823,11 @@ func TestUsage(t *testing.T) {
 			"",
 			"Flags:",
 			"  [u] up: Number of directories to go up when cd-ing",
+			"    Default: 0",
+			"    NonNegative()",
 			"",
 			"Symbols:",
-			"  *: Start of new shortcut-able section",
+			"  { shortcuts }: Start of new shortcut-able section. This is usable by providing the `shortcuts` keyword in this position. Run `cmd ... shortcuts --help` for more details",
 			"",
 		}, "\n"),
 	})
