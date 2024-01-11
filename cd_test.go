@@ -84,6 +84,7 @@ func TestExecute(t *testing.T) {
 		ignoreHistoryCheck bool
 		wantHistory        *History
 		cwdOverride        string
+		noShellDataKey     bool
 	}{
 		{
 			name:        "handles nil arguments",
@@ -549,9 +550,141 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		// parent tests
+		{
+			name:           "parent fails if no arg",
+			d:              &Dot{},
+			wantHistory:    &History{},
+			cwdOverride:    "/abc/def/ghi",
+			noShellDataKey: true,
+			etc: &commandtest.ExecuteTestCase{
+				Args:       []string{"parent"},
+				WantErr:    fmt.Errorf("Argument \"PARENT_DIR\" requires at least 1 argument, got 0"),
+				WantStderr: "Argument \"PARENT_DIR\" requires at least 1 argument, got 0\n",
+				WantData: &command.Data{Values: map[string]interface{}{
+					commander.GetwdKey: filepath.FromSlash("/abc/def/ghi"),
+				}},
+			},
+		},
+		{
+			name:           "parent fails if empty arg",
+			d:              &Dot{},
+			wantHistory:    &History{},
+			cwdOverride:    "/abc/def/ghi",
+			noShellDataKey: true,
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"parent", ""},
+				WantData: &command.Data{Values: map[string]interface{}{
+					parentDirArg.Name(): "",
+					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi"),
+				}},
+				WantErr:    fmt.Errorf("PARENT_DIR must be a parent directory"),
+				WantStderr: "PARENT_DIR must be a parent directory\n",
+			},
+		},
+		{
+			name:           "parent fails if doesn't match",
+			d:              &Dot{},
+			wantHistory:    &History{},
+			cwdOverride:    "/abc/def/ghi",
+			noShellDataKey: true,
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"parent", "jkl"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					parentDirArg.Name(): "jkl",
+					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi"),
+				}},
+				WantErr:    fmt.Errorf("PARENT_DIR must be a parent directory"),
+				WantStderr: "PARENT_DIR must be a parent directory\n",
+			},
+		},
+		{
+			name:           "parent fails if last directory",
+			d:              &Dot{},
+			wantHistory:    &History{},
+			cwdOverride:    "/abc/def/ghi",
+			noShellDataKey: true,
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"parent", "ghi"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					parentDirArg.Name(): "ghi",
+					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi"),
+				}},
+				WantErr:    fmt.Errorf("PARENT_DIR must be a parent directory"),
+				WantStderr: "PARENT_DIR must be a parent directory\n",
+			},
+		},
+		{
+			name:           "parent fails if only one directory",
+			d:              &Dot{},
+			wantHistory:    &History{},
+			cwdOverride:    "ghi",
+			noShellDataKey: true,
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"parent", "ghi"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					parentDirArg.Name(): "ghi",
+					commander.GetwdKey:  filepath.FromSlash("ghi"),
+				}},
+				WantErr:    fmt.Errorf("PARENT_DIR must be a parent directory"),
+				WantStderr: "PARENT_DIR must be a parent directory\n",
+			},
+		},
+		{
+			name:           "parent succeeds",
+			d:              &Dot{},
+			wantHistory:    &History{},
+			cwdOverride:    "/abc/def/ghi",
+			noShellDataKey: true,
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"parent", "def"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					parentDirArg.Name(): "def",
+					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi"),
+				}},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{filepath.FromSlash(`cd abc/def`)},
+				},
+			},
+		},
+		{
+			name:           "parent uses highest level directory if duplciates",
+			d:              &Dot{},
+			wantHistory:    &History{},
+			cwdOverride:    "/abc/def/ghi/def/jkl/mno",
+			noShellDataKey: true,
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"parent", "def"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					parentDirArg.Name(): "def",
+					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi/def/jkl/mno"),
+				}},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{filepath.FromSlash(`cd abc/def/ghi/def`)},
+				},
+			},
+		},
+		/* TODO: {
+			name:           "parent complexecutes",
+			d:              &Dot{},
+			wantHistory:    &History{},
+			cwdOverride:    "/abc/def/ghi/jkl",
+			noShellDataKey: true,
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"parent", "a"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					parentDirArg.Name(): "a",
+					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi/jkl"),
+				}},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{filepath.FromSlash(`cd /abc`)},
+				},
+			},
+		},*/
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			test.cwdOverride = filepath.FromSlash(test.cwdOverride)
 			c := test.shellCache
 			if c == nil {
 				c = cachetest.NewTestCache(t)
@@ -559,7 +692,9 @@ func TestExecute(t *testing.T) {
 			if test.etc.WantData == nil {
 				test.etc.WantData = &command.Data{Values: map[string]interface{}{}}
 			}
-			test.etc.WantData.Values[cache.ShellDataKey] = c
+			if !test.noShellDataKey {
+				test.etc.WantData.Values[cache.ShellDataKey] = c
+			}
 			if test.cwdOverride != "" {
 				commandtest.StubGetwd(t, test.cwdOverride, nil)
 			} else {
@@ -777,6 +912,21 @@ func TestAutocomplete(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:        "parent autocompletes",
+			cwdOverride: "/abc/def/ghi/jkl",
+			ctc: &commandtest.CompleteTestCase{
+				Node: DotCLI().Node(),
+				Args: "cmd parent ",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"abc",
+						"def",
+						"ghi",
+					},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -815,9 +965,12 @@ func TestUsage(t *testing.T) {
 			"┃   Go to the previous directory",
 			"┣━━ -",
 			"┃",
-			"┗━━ hist",
+			"┣━━ hist",
+			"┃",
+			"┗━━ parent PARENT_DIR",
 			"",
 			"Arguments:",
+			"  PARENT_DIR: Name of the parent directory to go up to",
 			"  PATH: destination directory",
 			"  SUB_PATH: subdirectories to continue to",
 			"",

@@ -22,8 +22,32 @@ const (
 var (
 	osStat = os.Stat
 
-	upFlag = commander.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", commander.Default(0), commander.NonNegative[int]())
+	upFlag       = commander.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", commander.Default(0), commander.NonNegative[int]())
+	parentDirArg = commander.Arg[string]("PARENT_DIR", "Name of the parent directory to go up to",
+		// TODO: commander.BestEffortComplexecute[string](),
+		commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+			return &command.Completion{
+				Suggestions: getParentDirs(d),
+			}, nil
+		}),
+	)
 )
+
+func getParentDirs(d *command.Data) []string {
+	wd := commander.Getwd.Get(d)
+	dirs := strings.Split(filepath.ToSlash(wd), "/")
+	if len(dirs) <= 1 {
+		return nil
+	}
+
+	var r []string
+	for _, d := range dirs[:len(dirs)-1] {
+		if d != "" {
+			r = append(r, d)
+		}
+	}
+	return r
+}
 
 type Dot struct {
 	// Shortcuts is a map from shortcut type to shortcuts to absolute directory path.
@@ -160,6 +184,23 @@ func (d *Dot) Node() command.Node {
 
 	return &commander.BranchNode{
 		Branches: map[string]command.Node{
+			"parent": commander.SerialNodes(
+				commander.Getwd,
+				parentDirArg,
+				commander.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+					dirs := getParentDirs(d)
+					dir := parentDirArg.Get(d)
+					for i := len(dirs) - 1; i >= 0; i-- {
+						if dir == dirs[i] {
+							k := []string{
+								fmt.Sprintf("cd %s", filepath.Join(dirs[:i+1]...)),
+							}
+							return k, nil
+						}
+					}
+					return nil, o.Stderrf("%s must be a parent directory\n", parentDirArg.Name())
+				}),
+			),
 			"hist": commander.SerialNodes(
 				cache.ShellProcessor(),
 				&commander.ExecutorProcessor{F: func(o command.Output, data *command.Data) error {
@@ -211,7 +252,12 @@ var (
 
 // MinusAliaser returns an alias for ". -"
 func MinusAliaser() sourcerer.Option {
-	return sourcerer.NewAliaser("m", "d", "-")
+	return sourcerer.NewAliaser("m", dotName, "-")
+}
+
+// ParentAliaser returns an alias for "d parent"
+func ParentAliaser() sourcerer.Option {
+	return sourcerer.NewAliaser("up", dotName, "parent")
 }
 
 // DotAliaser returns an `Aliaser` option that searches `n` directories up with
