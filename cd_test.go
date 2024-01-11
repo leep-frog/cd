@@ -662,19 +662,21 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
-		/* TODO: {
-			name:           "parent complexecutes",
-			d:              &Dot{},
-			wantHistory:    &History{},
-			cwdOverride:    "/abc/def/ghi/jkl",
+		{
+			name: "parent complexecutes",
+			d:    &Dot{},
+			wantHistory: &History{
+				PrevDirs: []string{commandtest.FilepathAbs(t, "abc", "def", "ghi", "jkl")},
+			},
+			cwdOverride: commandtest.FilepathAbs(t, "abc", "def", "ghi", "jkl"),
 			etc: &commandtest.ExecuteTestCase{
-				Args: []string{"parent", "a"},
+				Args: []string{"parent", "abc"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					parentDirArg.Name(): "a",
-					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi/jkl"),
+					parentDirArg.Name(): "abc",
+					commander.GetwdKey:  commandtest.FilepathAbs(t, "abc", "def", "ghi", "jkl"),
 				}},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{filepath.FromSlash(`cd /abc`)},
+					Executable: []string{fmt.Sprintf(`cd %q`, commandtest.FilepathAbs(t, "abc"))},
 				},
 			},
 		},

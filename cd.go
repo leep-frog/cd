@@ -24,7 +24,7 @@ var (
 
 	upFlag       = commander.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", commander.Default(0), commander.NonNegative[int]())
 	parentDirArg = commander.Arg[string]("PARENT_DIR", "Name of the parent directory to go up to",
-		// TODO: commander.BestEffortComplexecute[string](),
+		commander.Complexecute[string](commander.ComplexecuteBestEffort()),
 		commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 			var r []string
 			prev := commander.Getwd.Get(d)
