@@ -634,16 +634,16 @@ func TestExecute(t *testing.T) {
 			name:           "parent succeeds",
 			d:              &Dot{},
 			wantHistory:    &History{},
-			cwdOverride:    "/abc/def/ghi",
+			cwdOverride:    commandtest.FilepathAbs(t, "abc", "def", "ghi"),
 			noShellDataKey: true,
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "def"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					parentDirArg.Name(): "def",
-					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi"),
+					commander.GetwdKey:  commandtest.FilepathAbs(t, "abc", "def", "ghi"),
 				}},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{filepath.FromSlash(`cd abc/def`)},
+					Executable: []string{fmt.Sprintf(`cd %q`, commandtest.FilepathAbs(t, "abc", "def"))},
 				},
 			},
 		},
@@ -651,16 +651,16 @@ func TestExecute(t *testing.T) {
 			name:           "parent uses highest level directory if duplciates",
 			d:              &Dot{},
 			wantHistory:    &History{},
-			cwdOverride:    "/abc/def/ghi/def/jkl/mno",
+			cwdOverride:    commandtest.FilepathAbs(t, "abc", "def", "ghi", "def", "jkl"),
 			noShellDataKey: true,
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "def"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					parentDirArg.Name(): "def",
-					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi/def/jkl/mno"),
+					commander.GetwdKey:  commandtest.FilepathAbs(t, "abc", "def", "ghi", "def", "jkl"),
 				}},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{filepath.FromSlash(`cd abc/def/ghi/def`)},
+					Executable: []string{fmt.Sprintf(`cd %q`, commandtest.FilepathAbs(t, "abc", "def", "ghi", "def"))},
 				},
 			},
 		},
@@ -680,7 +680,7 @@ func TestExecute(t *testing.T) {
 					Executable: []string{filepath.FromSlash(`cd /abc`)},
 				},
 			},
-		},*/
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -914,7 +914,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 		{
 			name:        "parent autocompletes",
-			cwdOverride: "/abc/def/ghi/jkl",
+			cwdOverride: filepath.FromSlash("/abc/def/ghi/jkl"),
 			ctc: &commandtest.CompleteTestCase{
 				Node: DotCLI().Node(),
 				Args: "cmd parent ",

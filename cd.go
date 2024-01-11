@@ -26,29 +26,22 @@ var (
 	parentDirArg = commander.Arg[string]("PARENT_DIR", "Name of the parent directory to go up to",
 		// TODO: commander.BestEffortComplexecute[string](),
 		commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+			var r []string
+			prev := commander.Getwd.Get(d)
+			for pwd := filepath.Dir(prev); pwd != prev; prev, pwd = pwd, filepath.Dir(pwd) {
+				base := filepath.Base(pwd)
+				if base != `/` && base != `\` {
+					r = append(r, base)
+				}
+			}
+
 			return &command.Completion{
 				CaseInsensitive: true,
-				Suggestions:     getParentDirs(d),
+				Suggestions:     r,
 			}, nil
 		}),
 	)
 )
-
-func getParentDirs(d *command.Data) []string {
-	wd := commander.Getwd.Get(d)
-	dirs := strings.Split(filepath.ToSlash(wd), "/")
-	if len(dirs) <= 1 {
-		return nil
-	}
-
-	var r []string
-	for _, d := range dirs[:len(dirs)-1] {
-		if d != "" {
-			r = append(r, d)
-		}
-	}
-	return r
-}
 
 type Dot struct {
 	// Shortcuts is a map from shortcut type to shortcuts to absolute directory path.
@@ -189,14 +182,13 @@ func (d *Dot) Node() command.Node {
 				commander.Getwd,
 				parentDirArg,
 				commander.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
-					dirs := getParentDirs(d)
 					dir := parentDirArg.Get(d)
-					for i := len(dirs) - 1; i >= 0; i-- {
-						if dir == dirs[i] {
-							k := []string{
-								fmt.Sprintf("cd %s", filepath.Join(dirs[:i+1]...)),
-							}
-							return k, nil
+					prev := commander.Getwd.Get(d)
+					for pwd := filepath.Dir(prev); pwd != prev; prev, pwd = pwd, filepath.Dir(pwd) {
+						if filepath.Base(pwd) == dir {
+							return []string{
+								fmt.Sprintf("cd %q", pwd),
+							}, nil
 						}
 					}
 					return nil, o.Stderrf("%s must be a parent directory\n", parentDirArg.Name())
