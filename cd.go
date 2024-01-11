@@ -181,6 +181,7 @@ func (d *Dot) Node() command.Node {
 			"parent": commander.SerialNodes(
 				commander.Getwd,
 				parentDirArg,
+				cache.ShellProcessor(),
 				commander.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 					dir := parentDirArg.Get(d)
 					prev := commander.Getwd.Get(d)
@@ -193,6 +194,7 @@ func (d *Dot) Node() command.Node {
 					}
 					return nil, o.Stderrf("%s must be a parent directory\n", parentDirArg.Name())
 				}),
+				&commander.ExecutorProcessor{F: d.updateHistory},
 			),
 			"hist": commander.SerialNodes(
 				cache.ShellProcessor(),

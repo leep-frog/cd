@@ -567,11 +567,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name:           "parent fails if empty arg",
-			d:              &Dot{},
-			wantHistory:    &History{},
-			cwdOverride:    "/abc/def/ghi",
-			noShellDataKey: true,
+			name:        "parent fails if empty arg",
+			d:           &Dot{},
+			wantHistory: &History{},
+			cwdOverride: "/abc/def/ghi",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", ""},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -583,11 +582,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name:           "parent fails if doesn't match",
-			d:              &Dot{},
-			wantHistory:    &History{},
-			cwdOverride:    "/abc/def/ghi",
-			noShellDataKey: true,
+			name:        "parent fails if doesn't match",
+			d:           &Dot{},
+			wantHistory: &History{},
+			cwdOverride: "/abc/def/ghi",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "jkl"},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -599,11 +597,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name:           "parent fails if last directory",
-			d:              &Dot{},
-			wantHistory:    &History{},
-			cwdOverride:    "/abc/def/ghi",
-			noShellDataKey: true,
+			name:        "parent fails if last directory",
+			d:           &Dot{},
+			wantHistory: &History{},
+			cwdOverride: "/abc/def/ghi",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "ghi"},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -615,11 +612,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name:           "parent fails if only one directory",
-			d:              &Dot{},
-			wantHistory:    &History{},
-			cwdOverride:    "ghi",
-			noShellDataKey: true,
+			name:        "parent fails if only one directory",
+			d:           &Dot{},
+			wantHistory: &History{},
+			cwdOverride: "ghi",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "ghi"},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -631,11 +627,12 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name:           "parent succeeds",
-			d:              &Dot{},
-			wantHistory:    &History{},
-			cwdOverride:    commandtest.FilepathAbs(t, "abc", "def", "ghi"),
-			noShellDataKey: true,
+			name: "parent succeeds",
+			d:    &Dot{},
+			wantHistory: &History{
+				PrevDirs: []string{commandtest.FilepathAbs(t, "abc", "def", "ghi")},
+			},
+			cwdOverride: commandtest.FilepathAbs(t, "abc", "def", "ghi"),
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "def"},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -648,11 +645,12 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name:           "parent uses highest level directory if duplciates",
-			d:              &Dot{},
-			wantHistory:    &History{},
-			cwdOverride:    commandtest.FilepathAbs(t, "abc", "def", "ghi", "def", "jkl"),
-			noShellDataKey: true,
+			name: "parent uses highest level directory if duplciates",
+			d:    &Dot{},
+			wantHistory: &History{
+				PrevDirs: []string{commandtest.FilepathAbs(t, "abc", "def", "ghi", "def", "jkl")},
+			},
+			cwdOverride: commandtest.FilepathAbs(t, "abc", "def", "ghi", "def", "jkl"),
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "def"},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -669,7 +667,6 @@ func TestExecute(t *testing.T) {
 			d:              &Dot{},
 			wantHistory:    &History{},
 			cwdOverride:    "/abc/def/ghi/jkl",
-			noShellDataKey: true,
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "a"},
 				WantData: &command.Data{Values: map[string]interface{}{
