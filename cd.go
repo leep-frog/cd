@@ -27,7 +27,8 @@ var (
 		// TODO: commander.BestEffortComplexecute[string](),
 		commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 			return &command.Completion{
-				Suggestions: getParentDirs(d),
+				CaseInsensitive: true,
+				Suggestions:     getParentDirs(d),
 			}, nil
 		}),
 	)
