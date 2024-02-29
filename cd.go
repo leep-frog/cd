@@ -24,7 +24,7 @@ var (
 
 	upFlag       = commander.Flag[int]("up", 'u', "Number of directories to go up when cd-ing", commander.Default(0), commander.NonNegative[int]())
 	parentDirArg = commander.Arg[string]("PARENT_DIR", "Name of the parent directory to go up to",
-		commander.Complexecute[string](commander.ComplexecuteBestEffort()),
+		&commander.Complexecute[string]{Lenient: true},
 		commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 			var r []string
 			prev := commander.Getwd.Get(d)
@@ -151,14 +151,14 @@ type relativeTransformer struct {
 func (d *Dot) Node() command.Node {
 	opts := []commander.ArgumentOption[string]{
 		relativeFetcher(),
-		commander.Complexecute[string](commander.ComplexecuteBestEffort()),
+		&commander.Complexecute[string]{Lenient: true},
 		&commander.Transformer[string]{F: func(v string, data *command.Data) (string, error) {
 			return filepath.Abs(getDirectory(data, v))
 		}},
 	}
 
 	subOpts := []commander.ArgumentOption[[]string]{
-		commander.Complexecute[[]string](commander.ComplexecuteBestEffort()),
+		&commander.Complexecute[[]string]{Lenient: true},
 		subPathFetcher(),
 	}
 
