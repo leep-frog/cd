@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	os.Exit(sourcerer.Source([]sourcerer.CLI{cd.DotCLI()}))
+	os.Exit(sourcerer.Source("cdCLI", []sourcerer.CLI{cd.DotCLI()}))
 	/*os.Exit(sourcerer.Source(
 		[]sourcerer.CLI{cd.DotCLI()},
 		cd.MinusAliaser(),
