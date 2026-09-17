@@ -699,6 +699,25 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:           "handles relative path arg when working directory no longer exists",
+			osStatFI:       dirType,
+			d:              DotCLI(),
+			cwdOverrideErr: os.ErrNotExist,
+			wantHistory:    &History{},
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"../somewhere"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{fmt.Sprintf("cd %q", filepath.Join("..", "somewhere"))},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						upFlag.Name(): 0,
+						pathArg:       filepath.Join("..", "somewhere"),
+					},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
