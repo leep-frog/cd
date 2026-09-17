@@ -84,6 +84,7 @@ func TestExecute(t *testing.T) {
 		ignoreHistoryCheck bool
 		wantHistory        *History
 		cwdOverride        string
+		cwdOverrideErr     error
 		noShellDataKey     bool
 	}{
 		{
@@ -97,8 +98,8 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():      0,
-						commander.GetwdKey: cwd,
+						upFlag.Name():              0,
+						commander.GetwdIfExistsKey: cwd,
 					},
 				},
 			},
@@ -120,8 +121,8 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():      0,
-						commander.GetwdKey: cwd,
+						upFlag.Name():              0,
+						commander.GetwdIfExistsKey: cwd,
 					},
 				},
 			},
@@ -135,13 +136,13 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"c"},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{fmt.Sprintf("cd %q", filepathAbs(t, "cmd"))},
+					Executable: []string{fmt.Sprintf("cd %q", "cmd")},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():      0,
-						"PATH":             filepathAbs(t, "cmd"),
-						commander.GetwdKey: filepathAbs(t, "."),
+						upFlag.Name():              0,
+						"PATH":                     "cmd",
+						commander.GetwdIfExistsKey: filepathAbs(t, "."),
 					},
 				},
 			},
@@ -157,8 +158,8 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():      0,
-						commander.GetwdKey: cwd,
+						upFlag.Name():              0,
+						commander.GetwdIfExistsKey: cwd,
 					},
 				},
 			},
@@ -175,8 +176,8 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():      0,
-						commander.GetwdKey: cwd,
+						upFlag.Name():              0,
+						commander.GetwdIfExistsKey: cwd,
 					},
 				},
 			},
@@ -190,14 +191,14 @@ func TestExecute(t *testing.T) {
 				Args: []string{"some thing"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %q", filepathAbs(t, "some thing")),
+						fmt.Sprintf("cd %q", "some thing"),
 					},
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						pathArg:            filepathAbs(t, "some thing"),
-						upFlag.Name():      0,
-						commander.GetwdKey: cwd,
+						pathArg:                    "some thing",
+						upFlag.Name():              0,
+						commander.GetwdIfExistsKey: cwd,
 					},
 				},
 			},
@@ -216,8 +217,8 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						upFlag.Name():      2,
-						commander.GetwdKey: cwd,
+						upFlag.Name():              2,
+						commander.GetwdIfExistsKey: cwd,
 					},
 				},
 			},
@@ -235,9 +236,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:            filepathAbs(t, filepath.Join("..", "..", "..")),
-					upFlag.Name():      0,
-					commander.GetwdKey: cwd,
+					pathArg:                    filepathAbs(t, filepath.Join("..", "..", "..")),
+					upFlag.Name():              0,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -250,13 +251,13 @@ func TestExecute(t *testing.T) {
 				Args: []string{"something/somewhere.txt", "--up", "3"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %q", filepathAbs(t, filepath.Join("..", "..", "..", "something"))),
+						fmt.Sprintf("cd %q", filepath.Join("..", "..", "..", "something")),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:            filepathAbs(t, filepath.Join("..", "..", "..", "something", "somewhere.txt")),
-					upFlag.Name():      3,
-					commander.GetwdKey: cwd,
+					pathArg:                    filepath.Join("..", "..", "..", "something", "somewhere.txt"),
+					upFlag.Name():              3,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -269,13 +270,13 @@ func TestExecute(t *testing.T) {
 				Args: []string{"some where/"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %q", filepathAbs(t, filepath.Join("some where"))),
+						fmt.Sprintf("cd %q", filepath.Join("some where")),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:            filepathAbs(t, filepath.Join("some where")),
-					upFlag.Name():      0,
-					commander.GetwdKey: cwd,
+					pathArg:                    filepath.Join("some where"),
+					upFlag.Name():              0,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -288,14 +289,14 @@ func TestExecute(t *testing.T) {
 				Args: []string{"some", "thing", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %q", filepathAbs(t, filepath.Join("some", "thing", "some", "where"))),
+						fmt.Sprintf("cd %q", filepath.Join("some", "thing", "some", "where")),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:            filepathAbs(t, filepath.Join("some")),
-					subPathArg:         []string{"thing", "some", "where"},
-					upFlag.Name():      0,
-					commander.GetwdKey: cwd,
+					pathArg:                    "some",
+					subPathArg:                 []string{"thing", "some", "where"},
+					upFlag.Name():              0,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -308,14 +309,14 @@ func TestExecute(t *testing.T) {
 				Args: []string{"some", "thing", "-u", "1", "some", "where"},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("cd %q", filepathAbs(t, filepath.Join("..", "some", "thing", "some", "where"))),
+						fmt.Sprintf("cd %q", filepath.Join("..", "some", "thing", "some", "where")),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					pathArg:            filepathAbs(t, filepath.Join("..", "some")),
-					subPathArg:         []string{"thing", "some", "where"},
-					upFlag.Name():      1,
-					commander.GetwdKey: cwd,
+					pathArg:                    filepath.Join("..", "some"),
+					subPathArg:                 []string{"thing", "some", "where"},
+					upFlag.Name():              1,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -342,7 +343,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: cwd,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -358,7 +359,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: cwd,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -385,12 +386,12 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"somewhere"},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{fmt.Sprintf("cd %q", filepathAbs(t, "somewhere"))},
+					Executable: []string{fmt.Sprintf("cd %q", "somewhere")},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: cwd,
-					"PATH":             filepathAbs(t, "somewhere"),
-					upFlag.Name():      0,
+					commander.GetwdIfExistsKey: cwd,
+					"PATH":                     "somewhere",
+					upFlag.Name():              0,
 				}},
 			},
 		},
@@ -420,7 +421,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: cwd,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -451,12 +452,12 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"somewhere"},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{fmt.Sprintf("cd %q", filepathAbs(t, "somewhere"))},
+					Executable: []string{fmt.Sprintf("cd %q", "somewhere")},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: cwd,
-					"PATH":             filepathAbs(t, "somewhere"),
-					upFlag.Name():      0,
+					commander.GetwdIfExistsKey: cwd,
+					"PATH":                     "somewhere",
+					upFlag.Name():              0,
 				}},
 			},
 		},
@@ -491,7 +492,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: cwd,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -514,12 +515,12 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"somewhere"},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{fmt.Sprintf("cd %q", filepathAbs(t, "somewhere"))},
+					Executable: []string{fmt.Sprintf("cd %q", "somewhere")},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: cwd,
-					"PATH":             filepathAbs(t, "somewhere"),
-					upFlag.Name():      0,
+					commander.GetwdIfExistsKey: cwd,
+					"PATH":                     "somewhere",
+					upFlag.Name():              0,
 				}},
 			},
 		},
@@ -546,7 +547,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: cwd,
+					commander.GetwdIfExistsKey: cwd,
 				}},
 			},
 		},
@@ -562,7 +563,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("Argument \"PARENT_DIR\" requires at least 1 argument, got 0"),
 				WantStderr: "Argument \"PARENT_DIR\" requires at least 1 argument, got 0\n",
 				WantData: &command.Data{Values: map[string]interface{}{
-					commander.GetwdKey: filepath.FromSlash("/abc/def/ghi"),
+					commander.GetwdIfExistsKey: filepath.FromSlash("/abc/def/ghi"),
 				}},
 			},
 		},
@@ -574,8 +575,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", ""},
 				WantData: &command.Data{Values: map[string]interface{}{
-					parentDirArg.Name(): "",
-					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi"),
+					parentDirArg.Name():        "",
+					commander.GetwdIfExistsKey: filepath.FromSlash("/abc/def/ghi"),
 				}},
 				WantErr:    fmt.Errorf("PARENT_DIR must be a parent directory"),
 				WantStderr: "PARENT_DIR must be a parent directory\n",
@@ -589,8 +590,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "jkl"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					parentDirArg.Name(): "jkl",
-					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi"),
+					parentDirArg.Name():        "jkl",
+					commander.GetwdIfExistsKey: filepath.FromSlash("/abc/def/ghi"),
 				}},
 				WantErr:    fmt.Errorf("PARENT_DIR must be a parent directory"),
 				WantStderr: "PARENT_DIR must be a parent directory\n",
@@ -604,8 +605,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "ghi"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					parentDirArg.Name(): "ghi",
-					commander.GetwdKey:  filepath.FromSlash("/abc/def/ghi"),
+					parentDirArg.Name():        "ghi",
+					commander.GetwdIfExistsKey: filepath.FromSlash("/abc/def/ghi"),
 				}},
 				WantErr:    fmt.Errorf("PARENT_DIR must be a parent directory"),
 				WantStderr: "PARENT_DIR must be a parent directory\n",
@@ -619,8 +620,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "ghi"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					parentDirArg.Name(): "ghi",
-					commander.GetwdKey:  filepath.FromSlash("ghi"),
+					parentDirArg.Name():        "ghi",
+					commander.GetwdIfExistsKey: filepath.FromSlash("ghi"),
 				}},
 				WantErr:    fmt.Errorf("PARENT_DIR must be a parent directory"),
 				WantStderr: "PARENT_DIR must be a parent directory\n",
@@ -636,8 +637,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "def"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					parentDirArg.Name(): "def",
-					commander.GetwdKey:  commandtest.FilepathAbs(t, "abc", "def", "ghi"),
+					parentDirArg.Name():        "def",
+					commander.GetwdIfExistsKey: commandtest.FilepathAbs(t, "abc", "def", "ghi"),
 				}},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{fmt.Sprintf(`cd %q`, commandtest.FilepathAbs(t, "abc", "def"))},
@@ -654,8 +655,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "def"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					parentDirArg.Name(): "def",
-					commander.GetwdKey:  commandtest.FilepathAbs(t, "abc", "def", "ghi", "def", "jkl"),
+					parentDirArg.Name():        "def",
+					commander.GetwdIfExistsKey: commandtest.FilepathAbs(t, "abc", "def", "ghi", "def", "jkl"),
 				}},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{fmt.Sprintf(`cd %q`, commandtest.FilepathAbs(t, "abc", "def", "ghi", "def"))},
@@ -672,11 +673,29 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"parent", "abc"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					parentDirArg.Name(): "abc",
-					commander.GetwdKey:  commandtest.FilepathAbs(t, "abc", "def", "ghi", "jkl"),
+					parentDirArg.Name():        "abc",
+					commander.GetwdIfExistsKey: commandtest.FilepathAbs(t, "abc", "def", "ghi", "jkl"),
 				}},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{fmt.Sprintf(`cd %q`, commandtest.FilepathAbs(t, "abc"))},
+				},
+			},
+		},
+		{
+			name:           "handles -u flag when working directory no longer exists",
+			osStatFI:       dirType,
+			d:              DotCLI(),
+			cwdOverrideErr: os.ErrNotExist,
+			wantHistory:    &History{},
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"-u", "1"},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{fmt.Sprintf("cd %q", filepath.Join(".."))},
+				},
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						upFlag.Name(): 1,
+					},
 				},
 			},
 		},
@@ -694,7 +713,9 @@ func TestExecute(t *testing.T) {
 			if !test.noShellDataKey {
 				test.etc.WantData.Values[cache.ShellDataKey] = c
 			}
-			if test.cwdOverride != "" {
+			if test.cwdOverrideErr != nil {
+				commandtest.StubGetwd(t, test.cwdOverride, test.cwdOverrideErr)
+			} else if test.cwdOverride != "" {
 				commandtest.StubGetwd(t, test.cwdOverride, nil)
 			} else {
 				commandtest.StubGetwd(t, cwd, nil)

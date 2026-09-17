@@ -27,7 +27,7 @@ var (
 		&commander.Complexecute[string]{Lenient: true},
 		commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 			var r []string
-			prev := commander.Getwd.Get(d)
+			prev, _ := getwdIfExists(d)
 			for pwd := filepath.Dir(prev); pwd != prev; prev, pwd = pwd, filepath.Dir(pwd) {
 				base := filepath.Base(pwd)
 				if base != `/` && base != `\` {
@@ -61,6 +61,16 @@ func (d *Dot) Changed() bool { return d.changed }
 func (d *Dot) MarkChanged()  { d.changed = true }
 func (*Dot) Setup() []string { return nil }
 func (d *Dot) Name() string  { return dotName }
+
+// getwdIfExists returns the present working directory, and whether it could
+// be resolved at all (e.g. it may no longer exist if it was deleted out from
+// under the shell).
+func getwdIfExists(d *command.Data) (string, bool) {
+	if !commander.GetwdIfExists.Provided(d) {
+		return "", false
+	}
+	return commander.GetwdIfExists.Get(d), true
+}
 
 func getDirectory(data *command.Data, extra ...string) string {
 	upTo := upFlag.Get(data)
@@ -99,7 +109,13 @@ type History struct {
 }
 
 func (h *History) append(c *cache.Cache, data *command.Data) error {
-	dir := commander.Getwd.Get(data)
+	dir, ok := getwdIfExists(data)
+
+	// If the present directory couldn't be resolved (e.g. it was deleted),
+	// there's nothing meaningful to record.
+	if !ok {
+		return nil
+	}
 
 	// No need to update if previous directory is the same.
 	if len(h.PrevDirs) > 0 && h.PrevDirs[len(h.PrevDirs)-1] == dir {
@@ -153,7 +169,15 @@ func (d *Dot) Node() command.Node {
 		relativeFetcher(),
 		&commander.Complexecute[string]{Lenient: true},
 		&commander.Transformer[string]{F: func(v string, data *command.Data) (string, error) {
-			return filepath.Abs(getDirectory(data, v))
+			rel := getDirectory(data, v)
+			// A relative destination can always be resolved by the shell
+			// itself, even if the present working directory was deleted out
+			// from under it, so only resolve to an absolute path when the
+			// destination is already absolute.
+			if !filepath.IsAbs(rel) {
+				return rel, nil
+			}
+			return filepath.Abs(rel)
 		}},
 	}
 
@@ -171,7 +195,7 @@ func (d *Dot) Node() command.Node {
 		),
 		commander.OptionalArg(pathArg, "destination directory", opts...),
 		commander.ListArg(subPathArg, "subdirectories to continue to", 0, command.UnboundedList, subOpts...),
-		commander.Getwd,
+		commander.GetwdIfExists,
 		commander.ExecutableProcessor(d.cd),
 		&commander.ExecutorProcessor{F: d.updateHistory},
 	))
@@ -179,12 +203,12 @@ func (d *Dot) Node() command.Node {
 	return &commander.BranchNode{
 		Branches: map[string]command.Node{
 			"parent": commander.SerialNodes(
-				commander.Getwd,
+				commander.GetwdIfExists,
 				parentDirArg,
 				cache.ShellProcessor(),
 				commander.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 					dir := parentDirArg.Get(d)
-					prev := commander.Getwd.Get(d)
+					prev, _ := getwdIfExists(d)
 					for pwd := filepath.Dir(prev); pwd != prev; prev, pwd = pwd, filepath.Dir(pwd) {
 						if filepath.Base(pwd) == dir {
 							return []string{
@@ -203,7 +227,8 @@ func (d *Dot) Node() command.Node {
 					if err != nil {
 						return o.Err(err)
 					}
-					o.Stdoutln("WD: ", commander.Getwd.Get(data))
+					wd, _ := getwdIfExists(data)
+					o.Stdoutln("WD: ", wd)
 					o.Stdoutln("HISTORY: ", h)
 					o.Stdoutln("CACHE: ", c.Dir, c)
 					return nil
@@ -211,14 +236,14 @@ func (d *Dot) Node() command.Node {
 			),
 			"-": commander.SerialNodes(
 				commander.Description("Go to the previous directory"),
-				commander.Getwd,
+				commander.GetwdIfExists,
 				cache.ShellProcessor(),
 				commander.ExecutableProcessor(func(output command.Output, data *command.Data) ([]string, error) {
 					c, h, err := d.getHistory(data)
 					if err != nil {
 						return nil, output.Err(err)
 					}
-					wd := commander.Getwd.Get(data)
+					wd, _ := getwdIfExists(data)
 					pd := wd
 					for i := len(h.PrevDirs) - 1; pd == wd && i >= 0; i-- {
 						pd = h.PrevDirs[i]
